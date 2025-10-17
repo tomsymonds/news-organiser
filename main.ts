@@ -45,7 +45,7 @@ export default class NewsOrganiser extends Plugin {
 		
 		// Create an event from selected text, open a modal to edit details, and save to file
 		this.addCommand({
-			id: 'event-horizon-command-create',
+			id: 'news-organiser-command-create',
 			name: 'Create Event',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const fileManager = new FileManager(this.app, this.settings)
