@@ -181,7 +181,8 @@ export class FileManager {
     private getFileFromType(type: string, tFile: TFile, metadata: any): any {
         if(!type) return new BaseNote(tFile, metadata, this.settings)
         const types: { [key: string]: () => any } = {
-            "Event": () => { return new Event(tFile, metadata, this.settings) }
+            "Event": () => { return new Event(tFile, metadata, this.settings) },
+            "Note": () => { return new BaseNote(tFile, metadata, this.settings) }
         }
         const requestedType = types[type]
         return requestedType ? requestedType() : new BaseNote(tFile, metadata, this.settings)

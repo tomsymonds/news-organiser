@@ -2,9 +2,10 @@ import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } 
 import Event from 'Event'
 import EventModal from 'EventModal';
 import { FileWrangler, FileManager } from 'fileManagement';
+import { NoteModal } from './NoteModal'; 
 
 
-//An Obsidian plugin to create and manage dated events
+//An Obsidian plugin providing tools for journalists
 interface NewsOrganiserSettings {
 	tags: string;
 	type: string;
@@ -42,22 +43,26 @@ export default class NewsOrganiser extends Plugin {
 				})
 			}
 		});
+
+		this.addCommand({
+ 			id: "news-organiser-create-note",
+ 			name: "Create Note",
+ 			callback: () => new NoteModal(this.app, "Note", ["title", "category", "story"]).open(),
+ 		});
+
+		this.addCommand({
+ 			id: "news-organiser-create-event",
+ 			name: "Create Event",
+ 			callback: () => new EventModal(this.app, "Create", "", this.settings).open(),
+ 		});
 		
 		// Create an event from selected text, open a modal to edit details, and save to file
 		this.addCommand({
-			id: 'news-organiser-command-create',
-			name: 'Create Event',
+			id: 'news-organiser-create-event-selection',
+			name: 'Create Event From Selection',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const fileManager = new FileManager(this.app, this.settings)
 				const text = editor.getSelection();
-				const event = new Event(null, {description: text}, this.settings)
-				const onSubmit = (newEvent: any) => {
-					const onSave = (result: any) => {
-						new Notice(result.message)
-					}
-					fileManager.saveFile({path: `Events/${newEvent.title}.md`, noteObj: newEvent, onSave})
-				}
-				new EventModal(this.app, "Create", event, this.settings, onSubmit).open()
+				new EventModal(this.app, "Create", text, this.settings).open()
 			}
 		});
 

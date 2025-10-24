@@ -21,7 +21,6 @@ export default class Event extends BaseNote {
     title: string = ""
     metadata: any  = {
         type: "Event",
-        eventDate: null,
         tags: [],
         closestDate: null,
         day: null,
