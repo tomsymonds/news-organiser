@@ -21,8 +21,8 @@ export default class CategorySelector {
 		
 		for (const file of files) {
 			const cache = this.app.metadataCache.getFileCache(file);
-			if (cache?.frontmatter?.type === "Story") {
-				const category = cache.frontmatter.Category;
+			if (cache?.frontmatter?.type?.toLowerCase() === this.type.toLowerCase()) {
+				const category = cache.frontmatter.Category || cache.frontmatter.category;
 				if (category && typeof category === 'string') {
 					categories.add(category);
 				} else if (Array.isArray(category)) {

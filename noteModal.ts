@@ -59,7 +59,7 @@ export class NoteModal extends Modal {
 			const categorySelectorOnSelect  = (selectedCategory: string) => {
 				this.metadata.category = selectedCategory;
 			}
-			const categorySelector = new CategorySelector(this.app, "Event", categorySelectorOnSelect);
+			const categorySelector = new CategorySelector(this.app, "Note", categorySelectorOnSelect);
 			categorySelector.renderCategorySelector(contentEl);
 			categorySelector.renderNewCategoryInput(contentEl);
 		}
