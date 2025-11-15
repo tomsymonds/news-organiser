@@ -1,0 +1,11 @@
+{
+	"id": "news-organiser",
+	"name": "News Organiser",
+	"version": "1.2.0",
+	"minAppVersion": "0.15.0",
+	"description": "An Obsidian plugin to manage notes and stories for journalists",
+	"author": "Tom Symonds",
+	"authorUrl": "https://github.com/tomsymonds/news-organiser",
+	"fundingUrl": "https://github.com/tomsymonds/news-organiser",
+	"isDesktopOnly": false
+}
