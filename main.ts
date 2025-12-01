@@ -3,6 +3,7 @@ import Event from 'Event'
 import EventModal from 'EventModal';
 import { FileWrangler, FileManager } from 'fileManagement';
 import { NoteModal } from './NoteModal'; 
+import { PersonModal } from 'PersonModal';
 
 
 //An Obsidian plugin providing tools for journalists
@@ -42,7 +43,7 @@ export default class NewsOrganiser extends Plugin {
 					console.log("test", result)
 				})
 			}
-		});
+		}); 
 
 		this.addCommand({
  			id: "news-organiser-create-note",
@@ -56,6 +57,23 @@ export default class NewsOrganiser extends Plugin {
  			callback: () => new EventModal(this.app, "Create", "", this.settings).open(),
  		});
 		
+		this.addCommand({
+ 			id: "news-organiser-create-person",
+ 			name: "Create Person",
+			callback: () => {
+				new PersonModal(this.app, "", ["title", "category", "story"], false).open();
+			}
+ 		});
+
+		this.addCommand({
+ 			id: "news-organiser-create-person-and-insert",
+ 			name: "Create Person and Insert Link",
+			callback: () => {
+				new PersonModal(this.app, "", ["title", "category", "story"], true).open();
+			}
+ 		});
+		
+
 		// Create an event from selected text, open a modal to edit details, and save to file
 		this.addCommand({
 			id: 'news-organiser-create-event-selection',

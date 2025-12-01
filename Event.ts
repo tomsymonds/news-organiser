@@ -29,7 +29,6 @@ export default class Event extends BaseNote {
         source: "",
         story: "",
         description: "",
-        test: null
     }
     hasDate: boolean = false
     allowInvalid: boolean = false
