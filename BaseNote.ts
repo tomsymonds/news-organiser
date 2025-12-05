@@ -9,7 +9,7 @@ export class BaseNote {
     //The title of the note -- usually used for the tFile base name
     title: string = "New Note"
     metadata: any = {
-        type: "BaseNote",
+        type: "Note",
         tags: [],
         icon: "LiNotebookPen",
         iconColour: "#6B6A6A"
@@ -17,9 +17,10 @@ export class BaseNote {
     contents: string = ""
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
+        console.log(metadata)
         this.tFile = tFile 
         this.settings = settings
-        this.metadata = metadata
+        this.metadata = this.setMetadata(metadata)
         // this.title = this.tFile ? this.tFile.basename : ""
     }
 
@@ -34,8 +35,7 @@ export class BaseNote {
     }
 
     public setMetadata(metadata: any){
-        console.log("merging", this.metadata, metadata)
-        this.mergeMetadata(this.metadata, metadata)
+        return this.mergeMetadata(this.metadata, metadata)
     }
 
     public mergeMetadata<T extends Record<string, any>>(defaultMetadata: T, suppliedMetadata: Partial<T>): T {
