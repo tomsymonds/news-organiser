@@ -10,7 +10,7 @@ const defaultFolder = "Events"
 export default class Event extends BaseNote {
     static parentMetadataKeys = {
         name: "source", 
-        story: "story"
+        story: "story",
     }
     static defaultFolder = "Events"
     static defaultName = "New Event"
@@ -29,6 +29,8 @@ export default class Event extends BaseNote {
         source: "",
         story: "",
         description: "",
+        icon: "LiCalendarDays",
+        iconColour: "Red"
     }
     hasDate: boolean = false
     allowInvalid: boolean = false

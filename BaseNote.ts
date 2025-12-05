@@ -10,7 +10,9 @@ export class BaseNote {
     title: string = "New Note"
     metadata: any = {
         type: "BaseNote",
-        tags: []
+        tags: [],
+        icon: "LiNotebookPen",
+        iconColour: "#6B6A6A"
     }
     contents: string = ""
 

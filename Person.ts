@@ -13,7 +13,9 @@ export class Person extends BaseNote {
         category: "",
         organisation: "",
         stories: [],
-        tags: []
+        tags: [],
+        icon: "LiCircleUserRound",
+        iconColour: "Blue"    
     }
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
