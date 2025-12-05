@@ -51,6 +51,7 @@ export class FileManager {
     //onCreate: a callback function to call when the file is created or if there is an error
      private createFile(options: any): any{
         const { path, noteObj, onSave } = options
+        console.log(options)
         if(!onSave) return {status: "error", message: "ERROR: No onCreate callback provided in FileManager createFile"}
         const { name, folder } = this.pathParts(path)
         const savePath = this.getPath(folder, noteObj.title ? noteObj.title : name)

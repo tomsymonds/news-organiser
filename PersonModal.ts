@@ -25,7 +25,6 @@ export class PersonModal extends Modal {
     private person: Person;
     private insertIntoCurrent = false;
     private components: string[] = []
-    private type: string
     private defaultText: string
     private modalUtils: ModalUtils;
     private personSelector: any
@@ -34,6 +33,7 @@ export class PersonModal extends Modal {
         super(app);
         this.components = components;
         this.person = new Person(null, {}, null)
+        console.log("PersonModal person", this.person)
         this.person.metadata.type = "Person";
         this.defaultText = defaultText
         this.insertIntoCurrent = doInsert;
@@ -68,7 +68,7 @@ export class PersonModal extends Modal {
                 text
                     .setValue(this.defaultText)
                     .onChange((value) => {
-                        this.person.metadata.title = value;
+                        this.person.title = value;
                         this.personSelector.onInputUpdate(value)
                     });
                 })
@@ -114,15 +114,6 @@ export class PersonModal extends Modal {
             storyModal.render(contentEl);
         }
 
-        // /* ---------------- Insert Toggle ---------------- */
-        // new Setting(contentEl)
-        // 	.setName("Insert into current document")
-        // 	.setDesc("If enabled, the note link will be inserted into the current note.")
-        // 	.addToggle((toggle: ToggleComponent) => {
-        // 		toggle.setValue(this.insertIntoCurrent);
-        // 		toggle.onChange((val) => (this.insertIntoCurrent = val));
-        // 	});
-
         /* ---------------- Create Button ---------------- */
         new Setting(contentEl)
             .addButton((btn) =>
@@ -140,7 +131,7 @@ export class PersonModal extends Modal {
         console.log("Creating note with metadata:", this.person.metadata);
         const fileManager = new FileManager(this.app, {}); 
         const noteObj = {	
-            title: this.person.metadata.title,
+            title: this.person.title,
             metadata: this.person.metadata
         }
         
@@ -149,54 +140,15 @@ export class PersonModal extends Modal {
         }
 
         const onSave = this.modalUtils.createSaveCallback(showNotice)
-        
+
         const newNote = fileManager.saveFile({
-            path: `${this.person.metadata.type}s/${this.person.metadata.title}.md`, 
-            noteObj, onSave
+            path: `People/${this.person.title}.md`, 
+            noteObj: this.person, onSave
         })
     }
 
-
-    // 	if (!this.noteTitle) {
-    // 		new Notice("Please enter a title.");
-    // 		return;
-    // 	}
-
-    // 	const fileName = `${this.noteTitle}.md`;
-    // 	const filePath = normalizePath(fileName);
-
-    // 	let content = `---\ntype: ${this.noteType}\ncategory: ${this.category}\n`;
-    // 	if (this.storyTitle) content += `story: ${this.storyTitle}\n`;
-    // 	content += `---\n\n# ${this.noteTitle}\n`;
-
-    // 	const newFile = await this.app.vault.create(filePath, content);
-
-    // 	new Notice(`Created note: ${fileName}`);
-
-    // 	if (this.insertIntoCurrent && this.app.workspace.activeEditor?.editor) {
-    // 		const editor = this.app.workspace.activeEditor.editor;
-    // 		editor.replaceSelection(`[[${newFile.basename}]]`);
-    // 		}
-
-    // 	this.close();
-    // }
 
     onClose() {
         this.contentEl.empty();
     }
 }
-// ⚙️ Usage Example in Your Plugin
-// ts
-// Copy code
-// import { Plugin } from "obsidian";
-// import { CreateNoteModal } from "./CreateNoteModal";
-
-// export default class MyPlugin extends Plugin {
-// 	onload() {
-// 		this.addCommand({
-// 			id: "create-note-modal",
-// 			name: "Create New Note (Modal)",
-// 			callback: () => new CreateNoteModal(this.app).open(),
-// 		});
-// 	}
-// }

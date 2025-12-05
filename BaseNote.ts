@@ -17,11 +17,10 @@ export class BaseNote {
     contents: string = ""
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
-        console.log(metadata)
         this.tFile = tFile 
         this.settings = settings
         this.metadata = this.setMetadata(metadata)
-        // this.title = this.tFile ? this.tFile.basename : ""
+        console.log("BaseNote constructed", this)
     }
 
     public setTitle(){
@@ -39,6 +38,7 @@ export class BaseNote {
     }
 
     public mergeMetadata<T extends Record<string, any>>(defaultMetadata: T, suppliedMetadata: Partial<T>): T {
+        console.log("Merging metadata", defaultMetadata, suppliedMetadata)
         const result = { ...defaultMetadata };
         (Object.keys(suppliedMetadata) as (keyof T)[]).forEach((key) => {
             if (key in defaultMetadata) {

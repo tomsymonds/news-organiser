@@ -19,8 +19,7 @@ export class Person extends BaseNote {
     }
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
-        super(tFile, settings)
-        this.metadata = metadata
+        super(tFile, metadata, settings)
     }
 
     //Returns status of the Person. Applies tests, defined with an isValid key (returns true only if valid) and an error message
