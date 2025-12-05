@@ -23,12 +23,6 @@ import { Person } from 'Person'
  */
 export class PersonModal extends Modal {
     private person: Person;
-    private metadata: any = {
-        type: "",
-        title: "",
-        category: "",
-        story: "",	
-    };
     private insertIntoCurrent = false;
     private components: string[] = []
     private type: string
@@ -39,7 +33,8 @@ export class PersonModal extends Modal {
     constructor(app: App, defaultText: string, components: string[], doInsert: boolean = false) {
         super(app);
         this.components = components;
-        this.metadata.type = "Person";
+        this.person = new Person(null, {}, null)
+        this.person.metadata.type = "Person";
         this.defaultText = defaultText
         this.insertIntoCurrent = doInsert;
         this.modalUtils = new ModalUtils(app);
@@ -63,7 +58,7 @@ export class PersonModal extends Modal {
 
         this.personSelector = new PersonSelector(this.app, this.defaultText, onExistingPersonSelect);
         contentEl.empty();
-        contentEl.createEl("h2", { text: `New ${this.metadata.type}` });
+        contentEl.createEl("h2", { text: `New ${this.person.metadata.type}` });
 
         if(this.components.includes("title")) {
         /* ---------------- Title ---------------- */
@@ -73,7 +68,7 @@ export class PersonModal extends Modal {
                 text
                     .setValue(this.defaultText)
                     .onChange((value) => {
-                        this.metadata.title = value;
+                        this.person.metadata.title = value;
                         this.personSelector.onInputUpdate(value)
                     });
                 })
@@ -90,7 +85,7 @@ export class PersonModal extends Modal {
         if(this.components.includes("category")) {
             /* ---------------- Category ---------------- */
             const categorySelectorOnSelect  = (selectedCategory: string) => {
-                this.metadata.category = selectedCategory;
+                this.person.metadata.category = selectedCategory;
             }
             const categorySelector = new CategorySelector(this.app, "Note", categorySelectorOnSelect);
             categorySelector.renderCategorySelector(contentEl);
@@ -102,8 +97,8 @@ export class PersonModal extends Modal {
         if(this.components.includes("stories")) {
         /* ---------------- Story ---------------- */
             const onStorySelect = (file: TFile) => { 
-                this.metadata.story = [`[[${file.basename}]]`];
-                return this.metadata.story;
+                this.person.metadata.story = [`[[${file.basename}]]`];
+                return this.person.metadata.story;
             }
             const storyModal = new StorySelector(this.app, onStorySelect);
             storyModal.render(contentEl);
@@ -112,8 +107,8 @@ export class PersonModal extends Modal {
         if(this.components.includes("story")) {
         /* ---------------- Story ---------------- */
             const onStorySelect = (file: TFile) => { 
-                this.metadata.story = `[[${file.basename}]]`;
-                return this.metadata.story;
+                this.person.metadata.story = `[[${file.basename}]]`;
+                return this.person. metadata.story;
             }
             const storyModal = new StorySelector(this.app, onStorySelect);
             storyModal.render(contentEl);
@@ -142,11 +137,11 @@ export class PersonModal extends Modal {
     }
 
     private async createNote() {
-        console.log("Creating note with metadata:", this.metadata);
+        console.log("Creating note with metadata:", this.person.metadata);
         const fileManager = new FileManager(this.app, {}); 
         const noteObj = {	
-            title: this.metadata.title,
-            metadata: this.metadata
+            title: this.person.metadata.title,
+            metadata: this.person.metadata
         }
         
         const showNotice = (result: any) => {
@@ -156,7 +151,7 @@ export class PersonModal extends Modal {
         const onSave = this.modalUtils.createSaveCallback(showNotice)
         
         const newNote = fileManager.saveFile({
-            path: `${this.metadata.type}s/${this.metadata.title}.md`, 
+            path: `${this.person.metadata.type}s/${this.person.metadata.title}.md`, 
             noteObj, onSave
         })
     }
