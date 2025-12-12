@@ -6,7 +6,8 @@ import { NoteModal } from './NoteModal';
 import { PersonModal } from 'PersonModal';
 
 
-//An Obsidian plugin providing tools for journalists
+
+//An Obsidian plugin providing tools for journalists.
 interface NewsOrganiserSettings {
 	tags: string;
 	type: string;
