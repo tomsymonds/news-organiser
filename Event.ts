@@ -19,23 +19,23 @@ export default class Event extends BaseNote {
     description: string
     //The title of the event file, combining date and description
     title: string = ""
-    metadata: any  = {
-        type: "Event",
-        tags: [],
-        closestDate: null,
-        day: null,
-        month: null,
-        year: null,
-        source: "",
-        stories: [],
-        description: ""
-    }
+    metadata: any 
     hasDate: boolean = false
     allowInvalid: boolean = false
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
-        super(tFile, metadata, settings)
-        this.setMetadata(metadata)
+        const noteDefaults = {
+            type: "Event",
+            tags: [],
+            closestDate: null,
+            day: null,
+            month: null,
+            year: null,
+            source: "",
+            stories: [],
+            description: ""
+        };
+        super(tFile, { ...noteDefaults, ...metadata }, settings)
 
     }    
 

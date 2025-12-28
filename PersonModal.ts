@@ -100,6 +100,7 @@ export class PersonModal extends Modal {
         const stories = this.fileManager.getCurrentFileStories()
         if(stories && stories.length > 0){   
             this.storySelector?.addStories(stories)
+            this.person.metadata.stories = this.storySelector?.getSelectedStories() || []
         }
         this.storySelector.render(contentEl);
 
@@ -118,10 +119,6 @@ export class PersonModal extends Modal {
 
     //Create the new note file
     private async createNote() {
-        const noteObj = {	
-            title: this.person.title,
-            metadata: this.person.metadata
-        }
         
         const showNotice = (result: any) => {
             new Notice(result.message)
@@ -131,7 +128,7 @@ export class PersonModal extends Modal {
 
         const newNote = this.fileManager.saveFile({
             path: `People/${this.person.title}.md`, 
-            noteObj, onSave
+            noteObj: this.person, onSave
         })
     }
 

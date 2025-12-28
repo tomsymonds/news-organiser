@@ -11,16 +11,14 @@ export class Person extends BaseNote {
     metadata: any
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
-        super(tFile, {}, settings)
-        this.metadata = {
+        const noteDefaults = {
             type: "Person",
             category: "",
             organisation: "",
             stories: [],
             tags: [],
-            ...metadata
-        }
-        this.setMetadata(metadata)
+        };
+        super(tFile, { ...noteDefaults, ...metadata }, settings)
         this.setTitle()
     }
 

@@ -131,6 +131,7 @@ export default class EventModal extends Modal {
         const stories = this.fileManager.getCurrentFileStories()
         if(stories && stories.length > 0){   
             this.storySelector?.addStories(stories)
+            this.event.metadata.stories = this.storySelector?.getSelectedStories() || null
         }
 
         this.storySelector.render(contentEl);
@@ -147,6 +148,8 @@ export default class EventModal extends Modal {
                 const showNotice = (result: any) => {
                     new Notice(result.message)
                 }
+
+
 		        const onSave = this.modalUtils.createSaveCallback(showNotice)
                 fileManager.saveFile({path: `Events/${this.event.metadata.title}.md`, noteObj: this.event, onSave})
             }));

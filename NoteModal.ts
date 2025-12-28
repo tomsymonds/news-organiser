@@ -10,14 +10,14 @@ import StorySelector from "./StorySelector";
 import CategorySelector from "./CategorySelector";
 import { FileManager } from "fileManagement";
 import { ModalUtils } from "./ModalUtils";
-import { BaseNote } from "BaseNote";
+import Note from "Note";
 
 
 /**
  * Modal to create a new note
  */
 export class NoteModal extends Modal {
-	private note: BaseNote
+	private note: Note
 	private insertIntoCurrent = false;
 	private components: string[] = []
 	private type: string
@@ -29,8 +29,8 @@ export class NoteModal extends Modal {
 	constructor(app: App, type: string, components: string[]) {
 		super(app);
 		this.components = components;
-		this.note = new BaseNote(null, {}, null)
-		this.type
+		this.note = new Note(null, {}, {})
+		this.type = type
 		this.modalUtils = new ModalUtils(app);
 		this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
@@ -48,7 +48,9 @@ export class NoteModal extends Modal {
                 text
                     .setValue(this.note.metadata.title)
                     .onChange((value) => {
+						//Save the title in both metadata and note title
 						this.note.metadata.title = value;
+						this.note.title = value;
                     });
                 })
 
@@ -69,13 +71,15 @@ export class NoteModal extends Modal {
         }
 
 		this.storySelector = new StorySelector(this.app, onStorySelect, true)
+		this.storySelector.render(contentEl);
 
         //Add any stories from the current file to the stories list
         const stories = this.fileManager.getCurrentFileStories()
         if(stories && stories.length > 0){   
             this.storySelector?.addStories(stories)
+			this.note.metadata.stories = this.storySelector?.getSelectedStories() || []
         }
-        this.storySelector.render(contentEl);
+
 
 		// /* ---------------- Insert Toggle ---------------- */
 		// new Setting(contentEl)
@@ -102,10 +106,6 @@ export class NoteModal extends Modal {
 	//Create the note file based on the metadata entered
 	 private async createNote() {
 		const fileManager = new FileManager(this.app, {}); 
-		const noteObj = {	
-			title: this.note.metadata.title,
-			metadata: this.note.metadata
-		}
 		
         const showNotice = (result: any) => {
             new Notice(result.message)
@@ -114,8 +114,8 @@ export class NoteModal extends Modal {
 		const onSave = this.modalUtils.createSaveCallback(showNotice)
 		
 		const newNote = fileManager.saveFile({
-			path: `${this.note.metadata.type}s/${this.note.metadata.title}.md`, 
-			noteObj, onSave
+			path: `Notes/${this.note.metadata.title}.md`, 
+			noteObj: this.note, onSave
 	 	})
 	}
 

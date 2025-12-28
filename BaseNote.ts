@@ -8,17 +8,15 @@ export class BaseNote {
     settings: any
     //The title of the note -- usually used for the tFile base name
     title: string = "New Note"
-    metadata: any = {
-        type: "Note",
-        tags: []
-    }
+    metadata: any = {}
     contents: string = ""
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
         this.tFile = tFile 
         this.settings = settings
-        this.metadata = this.setMetadata(metadata)
+        this.metadata = metadata
     }
+    
 
     public setTitle(){
         if(this.tFile?.basename){
