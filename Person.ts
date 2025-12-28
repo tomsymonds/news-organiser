@@ -8,18 +8,25 @@ export class Person extends BaseNote {
     settings: any
     //The title of the note -- usually used for the tFile base name
     title: string = "New Note"
-    metadata: any = {
-        type: "Person",
-        category: "",
-        organisation: "",
-        stories: [],
-        tags: [],
-        icon: "LiCircleUserRound",
-        iconColour: "Blue"    
-    }
+    metadata: any
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
-        super(tFile, metadata, settings)
+        super(tFile, {}, settings)
+        this.metadata = {
+            type: "Person",
+            category: "",
+            organisation: "",
+            stories: [],
+            tags: [],
+            ...metadata
+        }
+        this.setMetadata(metadata)
+        this.setTitle()
+    }
+
+    //Add a story link to the person's list of stories
+    addStory(storyLink: []){
+        this.metadata.stories = [...new Set([...this.getListFromMetdataField("stories"), storyLink])]
     }
 
     //Returns status of the Person. Applies tests, defined with an isValid key (returns true only if valid) and an error message
@@ -31,5 +38,18 @@ export class Person extends BaseNote {
         //Pass an array containing the required tests and return an object containing status test results, 
         return this.getStatusObject([title])
     }
+
+    //Helper to get a list from a metadata field that may be stored as a comma-separated string or an array
+    private getListFromMetdataField(fieldName: string): string[] {
+        const fieldValue = this.metadata[fieldName];
+        if (Array.isArray(fieldValue)) {
+            return fieldValue;
+        } else if (typeof fieldValue === 'string') {
+            return fieldValue.split(',').map((item: string) => item.trim());
+        } else {
+            return [];
+        }   
+    }
+    
 
 }

@@ -27,10 +27,8 @@ export default class Event extends BaseNote {
         month: null,
         year: null,
         source: "",
-        story: "",
-        description: "",
-        icon: "LiCalendarDays",
-        iconColour: "Red"
+        stories: [],
+        description: ""
     }
     hasDate: boolean = false
     allowInvalid: boolean = false

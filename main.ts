@@ -41,7 +41,6 @@ export default class NewsOrganiser extends Plugin {
 					updates: {addDateProperties: "eventDate"}
 				}).then((result) => {
 					//new Notice(result.message)
-					console.log("test", result)
 				})
 			}
 		}); 
@@ -62,7 +61,7 @@ export default class NewsOrganiser extends Plugin {
  			id: "news-organiser-create-person",
  			name: "Create Person",
 			callback: () => {
-				new PersonModal(this.app, "", ["title", "category", "story"], false).open();
+				new PersonModal(this.app, "", ["title", "category", "stories"], false).open();
 			}
  		});
 
@@ -94,7 +93,7 @@ export default class NewsOrganiser extends Plugin {
 		});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		//this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	onunload() {

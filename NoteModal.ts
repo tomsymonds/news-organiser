@@ -22,20 +22,25 @@ export class NoteModal extends Modal {
 	private components: string[] = []
 	private type: string
 	private modalUtils: ModalUtils;
+	private storySelector: StorySelector
+    private currentStory: TFile | undefined
+	private fileManager: FileManager
 
 	constructor(app: App, type: string, components: string[]) {
 		super(app);
 		this.components = components;
 		this.note = new BaseNote(null, {}, null)
+		this.type
 		this.modalUtils = new ModalUtils(app);
-	}
+		this.fileManager = new FileManager(app, {});
+        this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
+    }
 
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h2", { text: `New Note` });
 
-		if(this.components.includes("title")) {
 		/* ---------------- Title ---------------- */
 		new Setting(contentEl)
 			.setName('Title')
@@ -47,37 +52,30 @@ export class NoteModal extends Modal {
                     });
                 })
 
-		}
+
 		
-		if(this.components.includes("category")) {
-			/* ---------------- Category ---------------- */
-			const categorySelectorOnSelect  = (selectedCategory: string) => {
-				this.note.metadata.category = selectedCategory;
-			}
-			const categorySelector = new CategorySelector(this.app, "Note", categorySelectorOnSelect);
-			categorySelector.renderCategorySelector(contentEl);
-			categorySelector.renderNewCategoryInput(contentEl);
+		/* ---------------- Category ---------------- */
+		const categorySelectorOnSelect  = (selectedCategory: string) => {
+			this.note.metadata.category = selectedCategory;
 		}
+		const categorySelector = new CategorySelector(this.app, "Note", categorySelectorOnSelect);
+		categorySelector.renderCategorySelector(contentEl);
+		categorySelector.renderNewCategoryInput(contentEl);
 
-		if(this.components.includes("stories")) {
-		/* ---------------- Story ---------------- */
-			const onStorySelect = (file: TFile) => { 
-				this.note.metadata.story = [`[[${file.basename}]]`];
-				return this.note.metadata.story;
-			}
-			const storyModal = new StorySelector(this.app, onStorySelect);
-			storyModal.render(contentEl);
-		}
+		/* ---------------- Stories ---------------- */
+		const onStorySelect = (file: TFile) => { 
+            this.note.metadata.stories = this.storySelector?.getSelectedStories() || []
+            return file.basename
+        }
 
-		if(this.components.includes("story")) {
-		/* ---------------- Story ---------------- */
-			const onStorySelect = (file: TFile) => { 
-				this.note.metadata.story = `[[${file.basename}]]`;
-				return this.note.metadata.story;
-			}
-			const storyModal = new StorySelector(this.app, onStorySelect);
-			storyModal.render(contentEl);
-		}
+		this.storySelector = new StorySelector(this.app, onStorySelect, true)
+
+        //Add any stories from the current file to the stories list
+        const stories = this.fileManager.getCurrentFileStories()
+        if(stories && stories.length > 0){   
+            this.storySelector?.addStories(stories)
+        }
+        this.storySelector.render(contentEl);
 
 		// /* ---------------- Insert Toggle ---------------- */
 		// new Setting(contentEl)
@@ -101,8 +99,8 @@ export class NoteModal extends Modal {
 			);
 	}
 
+	//Create the note file based on the metadata entered
 	 private async createNote() {
-		console.log("Creating note with metadata:", this.note.metadata);
 		const fileManager = new FileManager(this.app, {}); 
 		const noteObj = {	
 			title: this.note.metadata.title,

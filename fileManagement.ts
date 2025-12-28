@@ -2,6 +2,7 @@ import { App, TFile, normalizePath, Vault} from "obsidian";
 import { BaseNote } from './BaseNote'
 import Note  from 'Note'
 import Event from "Event";
+import { Person } from "Person";
 import FileSearcher from "FileSearcher";
 import FileUpdater from "FileUpdater";
 
@@ -27,7 +28,6 @@ export class FileManager {
 
     //Save a file creating if it doesn't exist and updating if it does.
     saveFile(options: any): any {
-        console.log("saveFile", options)
         if(this.fileExists(options.path)){
             return this.updateFile(options)
         } else {
@@ -38,7 +38,7 @@ export class FileManager {
         // Get a file from the vault based on its path and return a full file object
     getFile(filePath: string): any {
         if(!filePath) return {status: "error", message: "No file path provided"}
-        const { fullPath,  } = this.pathParts(filePath)
+        const { fullPath  } = this.pathParts(filePath)
         const tFile = this.getTFile(fullPath)
         if(!tFile) return {status: "error", message: `File not found: ${fullPath}`}
         const newFile = this.createFileFromTFile(tFile as TFile)
@@ -51,7 +51,6 @@ export class FileManager {
     //onCreate: a callback function to call when the file is created or if there is an error
      private createFile(options: any): any{
         const { path, noteObj, onSave } = options
-        console.log(options)
         if(!onSave) return {status: "error", message: "ERROR: No onCreate callback provided in FileManager createFile"}
         const { name, folder } = this.pathParts(path)
         const savePath = this.getPath(folder, noteObj.title ? noteObj.title : name)
@@ -136,10 +135,28 @@ export class FileManager {
     }
 
     //Get the current active file in the workspace as a file object
-    private getActiveTFile(): BaseNote | null {
+    private getActiveFile(): BaseNote | null {
         const currentTFile =  this.app.workspace.getActiveFile()
         if(!currentTFile) return null
         return this.createFileFromTFile(currentTFile)
+    }
+
+    //Get the current active file in the workspace if it matches the specified type
+    //Matches all types if type is not set  
+    getCurrentActiveFileOfType(type: string | null): any  {
+        const response = this.getCurrentActiveFile();
+        if(response.status === "error") return null
+        if(type && response.file.metadata.type !== type ){
+            return null
+        }
+        return response.file
+    }
+    
+    //Get the current active file in the workspace as a response object
+    getCurrentActiveFile(): any {
+        const activeFile = this.getActiveFile();
+        if(!activeFile) return {status: "error", message: "No active file"}
+        return {status: "ok", file: activeFile}
     }
 
     // Get a TFile from the vault based on a path
@@ -149,6 +166,20 @@ export class FileManager {
             const { fullPath } = this.pathParts(filePath)
             return vault.getAbstractFileByPath(fullPath);
         }
+    }
+
+    //Get the stories linked to by the current active file
+    getCurrentFileStories(): string[] {
+        const currentFile = this.getActiveFile();
+        //No current file
+        if(!currentFile) return []
+        //Current file is a story itself
+        if(currentFile.tFile &&currentFile.metadata.type === "Story") return [`[[${currentFile.tFile.basename}]]`]
+        //Current file has stories linked in its metadata
+        if(currentFile.metadata.stories && Array.isArray(currentFile.metadata.stories)) return currentFile.metadata.stories
+        //Current file has a single story linked in its metadata
+        if(currentFile.metadata.story) return [currentFile.metadata.story]
+        return []
     }
 
 
@@ -167,7 +198,7 @@ export class FileManager {
 
     //Get the active file and return its metadata, including its name as a link
     private getActiveFileMetadata(): any {
-        const activeFile = this.getActiveTFile();
+        const activeFile = this.getActiveFile();
         if(!activeFile) return {}
 		const name = activeFile.tFile ? `[[${activeFile.tFile.basename}]]` : null
         if(!(activeFile && activeFile.tFile instanceof TFile)){
@@ -185,7 +216,8 @@ export class FileManager {
         if(!type) return new BaseNote(tFile, metadata, this.settings)
         const types: { [key: string]: () => any } = {
             "Event": () => { return new Event(tFile, metadata, this.settings) },
-            "Note": () => { return new Note(tFile, metadata, this.settings) }
+            "Note": () => { return new Note(tFile, metadata, this.settings) },
+            "Person": () => { return new Person(tFile, metadata, this.settings) },
         }
         const requestedType = types[type]
         return requestedType ? requestedType() : new BaseNote(tFile, metadata, this.settings)
@@ -201,6 +233,7 @@ export class FileManager {
 
     //Check if a file exists in the vault
     private fileExists(filePath: string): boolean {
+        if(!filePath) return false
         const vault = this.app.vault;
         const normalizedFilePath = normalizePath(filePath)
         let file = vault.getAbstractFileByPath(normalizedFilePath);

@@ -3,10 +3,6 @@ import {
     Modal,
     Setting,
     TFile,
-    TextComponent,
-    ToggleComponent,
-    DropdownComponent,
-    normalizePath,
     Notice,
 } from "obsidian";
 
@@ -28,43 +24,55 @@ export class PersonModal extends Modal {
     private defaultText: string
     private modalUtils: ModalUtils;
     private personSelector: any
+    private fileManager: FileManager
+    private nameTextArea: any = null
+    private categorySelector: CategorySelector 
+    private storySelector: StorySelector | null = null
+    private currentStory: TFile | undefined
 
     constructor(app: App, defaultText: string, components: string[], doInsert: boolean = false) {
         super(app);
         this.components = components;
         this.person = new Person(null, {}, null)
-        console.log("PersonModal person", this.person)
         this.person.metadata.type = "Person";
         this.defaultText = defaultText
         this.insertIntoCurrent = doInsert;
         this.modalUtils = new ModalUtils(app);
+        this.fileManager = new FileManager(app, {});
+        this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
     }
-
 
     onOpen() {
         const { contentEl } = this;
+
+        // Callback when a story is selected
+        const onStorySelect = (file: TFile): string => { 
+            this.person.metadata.stories = this.storySelector?.getSelectedStories() || []
+            return file.basename
+        }
+
+        // Callback when an existing person is selected
         const onExistingPersonSelect = (person: TFile) => {
-            // Insert link at cursor if insertIntoCurrent is enabled
-            if (this.insertIntoCurrent && this.app.workspace.activeEditor?.editor) {
-                const editor = this.app.workspace.activeEditor.editor;
-                editor.replaceSelection(`[[${person.basename}]]`);
+            const personObj = this.fileManager.getFile(person.path).file
+            if(personObj && personObj.tFile){
+                this.nameTextArea.setValue(personObj.title);
+                this.categorySelector.setCategoryValue(personObj.metadata.category)
+                this.storySelector?.setSelectedStories(personObj.metadata.stories || [])
+                this.person = personObj;
+            } else {
+                return;
             }
-            
-            // Close the modal after inserting
-            this.close();
-            
-            return person;
         }
 
         this.personSelector = new PersonSelector(this.app, this.defaultText, onExistingPersonSelect);
         contentEl.empty();
         contentEl.createEl("h2", { text: `New ${this.person.metadata.type}` });
 
-        if(this.components.includes("title")) {
         /* ---------------- Title ---------------- */
         new Setting(contentEl)
-            .setName('Title')
+            .setName('Name') //Though we call it title internally, for a Person it's more intuitive to call it Name
             .addTextArea((text) => {
+                this.nameTextArea = text;
                 text
                     .setValue(this.defaultText)
                     .onChange((value) => {
@@ -73,46 +81,27 @@ export class PersonModal extends Modal {
                     });
                 })
 
-        }
-
 
 
         /* ---------------- Existing People Suggestions ---------------- */
-
-
         this.personSelector.render(this.contentEl);
-        
-        if(this.components.includes("category")) {
-            /* ---------------- Category ---------------- */
-            const categorySelectorOnSelect  = (selectedCategory: string) => {
-                this.person.metadata.category = selectedCategory;
-            }
-            const categorySelector = new CategorySelector(this.app, "Note", categorySelectorOnSelect);
-            categorySelector.renderCategorySelector(contentEl);
-            categorySelector.renderNewCategoryInput(contentEl);
+        /* ---------------- Category ---------------- */
+        const categorySelectorOnSelect  = (selectedCategory: string) => {
+            this.person.metadata.category = selectedCategory;
         }
+        this.categorySelector = new CategorySelector(this.app, "Person", categorySelectorOnSelect);
+        this.categorySelector.renderCategorySelector(contentEl);
+        this.categorySelector.renderNewCategoryInput(contentEl);
 
 
-
-        if(this.components.includes("stories")) {
-        /* ---------------- Story ---------------- */
-            const onStorySelect = (file: TFile) => { 
-                this.person.metadata.story = [`[[${file.basename}]]`];
-                return this.person.metadata.story;
-            }
-            const storyModal = new StorySelector(this.app, onStorySelect);
-            storyModal.render(contentEl);
+        /* ---------------- Stories ---------------- */
+        this.storySelector = new StorySelector(this.app, onStorySelect, true);
+        //Add any stories from the current file to the stories list
+        const stories = this.fileManager.getCurrentFileStories()
+        if(stories && stories.length > 0){   
+            this.storySelector?.addStories(stories)
         }
-
-        if(this.components.includes("story")) {
-        /* ---------------- Story ---------------- */
-            const onStorySelect = (file: TFile) => { 
-                this.person.metadata.story = `[[${file.basename}]]`;
-                return this.person. metadata.story;
-            }
-            const storyModal = new StorySelector(this.app, onStorySelect);
-            storyModal.render(contentEl);
-        }
+        this.storySelector.render(contentEl);
 
         /* ---------------- Create Button ---------------- */
         new Setting(contentEl)
@@ -127,9 +116,8 @@ export class PersonModal extends Modal {
             );
     }
 
+    //Create the new note file
     private async createNote() {
-        console.log("Creating note with metadata:", this.person.metadata);
-        const fileManager = new FileManager(this.app, {}); 
         const noteObj = {	
             title: this.person.title,
             metadata: this.person.metadata
@@ -141,12 +129,11 @@ export class PersonModal extends Modal {
 
         const onSave = this.modalUtils.createSaveCallback(showNotice)
 
-        const newNote = fileManager.saveFile({
+        const newNote = this.fileManager.saveFile({
             path: `People/${this.person.title}.md`, 
-            noteObj: this.person, onSave
+            noteObj, onSave
         })
     }
-
 
     onClose() {
         this.contentEl.empty();

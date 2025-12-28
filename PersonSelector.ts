@@ -8,7 +8,7 @@ import {
 
 
 /**
- * Fuzzy modal to select a Story note 
+ * Modal to select a person
  */
 export default class PersonSelector extends FuzzySuggestModal<TFile> {
     private people: TFile[];
@@ -25,6 +25,7 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         this.people = this.getPeople()
     }
 
+    //Get all person notes in the vault
 	private getPeople(): TFile[] {
 		const files = this.app.vault.getMarkdownFiles();
 		const people: TFile[] = [];
@@ -37,32 +38,36 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
 		return people
     }
 
+    //Handle input updates to show suggestions
     onInputUpdate(text: string) {
         this.showSuggestions(text, this.suggestionsContainer!, this.onSelect);
     } 
 
+    //Get all items to display in the fuzzy search
     getItems(): TFile[] {
         return this.getPeople();
     }
 
+    //Get the display text for each item
     getItemText(item: TFile): string {
         return item.basename;
     }
 
+    //Handle item selection
     onChooseItem(item: TFile): void {
         this.onSelect(item);
     }
 
-    //Render the story suggestions and recent stories UI
+    //Render the person suggestions and recent people UI
     render(container: HTMLElement): void {
         const people = this.getPeople();
         this.renderPersonTextBox(container, people);
     }
 
     /**
-     * Renders a text box with auto-complete suggestions for story titles
+     * Renders a text box with auto-complete suggestions for person names
      */
-    renderPersonTextBox(container: HTMLElement, stories: TFile[]): TextComponent {
+    renderPersonTextBox(container: HTMLElement, people: TFile[]): TextComponent {
         const onPersonSelect = this.onSelect;
         let selectedPerson: TFile | null = null;
 
@@ -106,6 +111,7 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         return setting.components[0] as TextComponent;
     }
 
+    //Show suggestions based on the current input query
     private showSuggestions(
         query: string, //The current input query
         container: HTMLElement, 
@@ -129,6 +135,7 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         this.renderPersonItems(filteredPeople, container, textComponent);
     }
 
+    //Render individual person suggestion items
     private renderPersonItems(
         people: TFile[], 
         container: HTMLElement, 
@@ -153,13 +160,13 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
 
             suggestionEl.addEventListener('click', () => {
                 //textComponent.setValue(person.basename);
-                console.log("Person clicked:", person.basename);
                 container.style.display = 'none';
                 this.onSelect(person);
             });
         });
     }
 
+    //Render recent people inline below the text box
     private renderRecentPeopleInline(
         container: HTMLElement, 
         textComponent: TextComponent, 
@@ -187,6 +194,7 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         this.renderPersonItems(recentPeople, container, textComponent);
     }
 
+    //Get the 5 most recently modified people notes
     getRecentPeople(){
         const people = this.getPeople();
         
@@ -259,7 +267,6 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
 
             storyEl.addEventListener('click', () => {
                 // Clear suggestions and populate text box
-                console.log("Person clicked:", person.basename);
                 if (this.suggestionsContainer) {
                     this.suggestionsContainer.style.display = 'none';
                 }
@@ -271,6 +278,7 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         });
     }
 
+    //
     private getTimeAgo(date: Date): string {
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();

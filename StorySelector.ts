@@ -15,10 +15,14 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
     private onSelect: any;
     private storyTextComponent: TextComponent | null = null;
     private suggestionsContainer: HTMLElement | null = null;
+    private selectedStories: string[] = [];
+    private selectedStoriesContainer: HTMLElement | null = null;
+    private isList: boolean = true;
 
-    constructor(app: App, onSelect: (file: TFile) => string) {
+    constructor(app: App, onSelect: (file: TFile) => string, isList: boolean = true) {
         super(app);
         this.onSelect = onSelect;
+        this.isList = isList;
         this.setPlaceholder("Select a Story");
     }
 
@@ -35,14 +39,17 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
 		return stories
     }
 
+    //Provide the list of items for the fuzzy search
     getItems(): TFile[] {
         return this.getStoryNotes();
     }
 
+    //Display text for each item in the fuzzy search list
     getItemText(item: TFile): string {
         return item.basename;
     }
 
+    //Handle item selection
     onChooseItem(item: TFile): void {
         this.onSelect(item);
     }
@@ -51,6 +58,9 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
     render(container: HTMLElement): void {
         const stories = this.getStoryNotes();
         this.renderStoryTextBox(container, stories);
+        this.renderSelectedStories(container);
+        // Create suggestions container after selected stories so it appears below
+        this.createSuggestionsContainer(container);
     }
 
     /**
@@ -61,18 +71,11 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
         let selectedStory: TFile | null = null;
 
         const setting = new Setting(container)
-            .setName("Story")
-            .setDesc("Type to search for a story")
+            .setName(`Stor${this.isList ? "ies" : "y"}`)
             .addText((text: TextComponent) => {
                 // Store reference to text component
                 this.storyTextComponent = text;
-                
-                // Create suggestions container
-                this.suggestionsContainer = container.createEl("div", {
-                    cls: "story-suggestions",
-                    attr: { style: "display: none; border: 1px solid var(--background-modifier-border); max-height: 200px; overflow-y: auto; z-index: 1000; background: var(--background-primary);" }
-                });
-
+                text.setPlaceholder("Search");
                 text.onChange((value: string) => {
                     selectedStory = null;
                     this.showSuggestions(value, stories, this.suggestionsContainer!, text, onStorySelect);
@@ -100,6 +103,16 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
         return setting.components[0] as TextComponent;
     }
 
+    //Create the container for story suggestions
+    private createSuggestionsContainer(container: HTMLElement): void {
+        // Create suggestions container after other elements
+        this.suggestionsContainer = container.createEl("div", {
+            cls: "story-suggestions",
+            attr: { style: "display: none; border: 1px solid var(--background-modifier-border); max-height: 200px; overflow-y: auto; z-index: 1000; background: var(--background-primary);" }
+        });
+    }
+
+    //Show suggestions based on the current input query
     private showSuggestions(
         query: string, //The current input query
         stories: TFile[], 
@@ -131,6 +144,7 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
         this.renderStoryItems(filteredStories, container, textComponent, onStorySelect);
     }
 
+    //Render individual story suggestion items
     private renderStoryItems(
         stories: TFile[], 
         container: HTMLElement, 
@@ -142,7 +156,7 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
                 text: story.basename,
                 cls: "story-suggestion-item",
                 attr: { 
-                    style: "padding: 8px; cursor: pointer; border-bottom: 1px solid var(--background-modifier-border);" 
+                    style: "color: #058239; font-weight: bold; padding: 8px; cursor: pointer; border-bottom: 1px solid var(--background-modifier-border);" 
                 }
             });
 
@@ -155,13 +169,15 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
             });
 
             suggestionEl.addEventListener('click', () => {
-                textComponent.setValue(story.basename);
+                this.addStories([`[[${story.basename}]]`]);
+                textComponent.setValue('');
                 container.style.display = 'none';
                 onStorySelect?.(story);
             });
         });
     }
 
+    //Render recent stories inline below the text box
     private renderRecentStoriesInline(
         container: HTMLElement, 
         textComponent: TextComponent, 
@@ -189,6 +205,7 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
         this.renderStoryItems(recentStories, container, textComponent, onStorySelect);
     }
 
+    //Get the 5 most recently modified story notes
     getRecentStories(){
         const stories = this.getStoryNotes();
         
@@ -265,13 +282,15 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
                     this.suggestionsContainer.style.display = 'none';
                 }
                 if (this.storyTextComponent) {
-                    this.storyTextComponent.setValue(story.basename);
+                    this.storyTextComponent.setValue('');
                 }
+                this.addStories([`[[${story.basename}]]`]);
                 this.onSelect(story);
             });
         });
     }
 
+    //Return a human-readable "time ago" string for a given date
     private getTimeAgo(date: Date): string {
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
@@ -284,5 +303,105 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
         if (diffHours < 24) return `${diffHours}h ago`;
         if (diffDays < 7) return `${diffDays}d ago`;
         return date.toLocaleDateString();
+    }
+
+    //Add a stories to the selected stories list
+    //Takes a string of story links in the format [[story1]], [[story2]]
+    addStories(stories: string[]): void {
+        stories.forEach((story) => {
+            if (!this.selectedStories.includes(story)) {
+                this.selectedStories.push(story);
+            }
+        });
+        this.updateSelectedStoriesDisplay();
+    }
+
+    //Remove a story from the selected stories list
+    private removeStory(storyLink: string): void {
+        if (!Array.isArray(this.selectedStories)) {
+            this.selectedStories = [];
+        }
+        this.selectedStories = this.selectedStories.filter(s => s !== storyLink);
+        this.updateSelectedStoriesDisplay();
+    }
+
+    //Render the selected stories container
+    private renderSelectedStories(container: HTMLElement): void {
+        this.selectedStoriesContainer = container.createEl('div', {
+            cls: 'selected-stories-container',
+            attr: { style: 'margin-bottom: 10px;' }
+        });
+        this.updateSelectedStoriesDisplay();
+    }
+
+    //Update the display of selected stories
+    private updateSelectedStoriesDisplay(): void {
+        if (!this.selectedStoriesContainer) return;
+        
+        if (!Array.isArray(this.selectedStories)) {
+            this.selectedStories = [];
+        }
+        
+        this.selectedStoriesContainer.empty();
+        if (this.selectedStories.length === 0) return;
+
+        const label = this.selectedStoriesContainer.createEl('div', {
+            attr: { style: 'font-weight: 600; margin-bottom: 5px; font-size: 0.9em;' }
+        });
+
+        const tagsContainer = this.selectedStoriesContainer.createEl('div', {
+            attr: { style: 'display: flex; flex-wrap: wrap; gap: 5px;' }
+        });
+
+        this.selectedStories.forEach(storyLink => {
+            const tag = tagsContainer.createEl('div', {
+                attr: {
+                    style: 'color: #058239; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: var(--background-modifier-form-field); border: 1px solid var(--background-modifier-border); border-radius: 4px; font-size: 0.9em;'
+                }
+            });
+
+            // Extract basename from link format [[basename]]
+            const basename = storyLink.replace(/\[\[|\]\]/g, '');
+            tag.createEl('span', { text: basename });
+
+            const removeBtn = tag.createEl('span', {
+                text: '×',
+                attr: {
+                    style: 'cursor: pointer; font-weight: bold; font-size: 1.2em; line-height: 1; margin-left: 2px;'
+                }
+            });
+
+            removeBtn.addEventListener('click', () => {
+                this.removeStory(storyLink);
+            });
+        });
+    }
+
+    //Get the selected stories as an array of strings
+    getSelectedStories(): string[] {
+        if (!Array.isArray(this.selectedStories)) {
+            this.selectedStories = [];
+        }
+        return this.selectedStories;
+    }
+
+    //Get the selected stories as a comma-separated string for metadata storage
+    getSelectedStoriesAsMetadata(): string {
+        if (!Array.isArray(this.selectedStories)) {
+            this.selectedStories = [];
+        }
+        return this.selectedStories.join(", ");
+    }
+
+    //Set the selected stories from an array of strings
+    setSelectedStories(stories: string[]): void {
+        this.selectedStories = stories || []
+        this.updateSelectedStoriesDisplay();
+    }
+
+    //Clear all selected stories
+    clearSelectedStories(): void {
+        this.selectedStories = [];
+        this.updateSelectedStoriesDisplay();
     }
 }

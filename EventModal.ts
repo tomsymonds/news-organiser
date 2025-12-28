@@ -10,11 +10,17 @@ export default class EventModal extends Modal {
 
     private event: Event;
     private modalUtils: ModalUtils;
+    private fileManager: FileManager
+    private storySelector: StorySelector | null = null
+    //The currently active story note when the modal is opened. Null if none or not a story
+    private currentFile: any | undefined 
 
     constructor(app: App, type: string, selectedText: string, settings: any) {
 
         super(app);
-        this.setTitle(`${type} Event`)
+        this.fileManager = new FileManager(app, {});
+        this.currentFile = this.fileManager.getCurrentActiveFileOfType(null)
+        
         //Add a listener for Enter key to submit the form
         this.scope.register([], 'Enter', (evt: KeyboardEvent) => {
             if (evt.isComposing) {
@@ -27,14 +33,24 @@ export default class EventModal extends Modal {
                 actionBtn?.click();
         });
 
+        //The event being created
+        this.event = new Event(null, {
+            description: selectedText
+        }, settings)
+        this.modalUtils = new ModalUtils(app);
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.createEl("h2", { text: `New Event` });
         let descriptionInput: any
         let yearInput: any
         let monthInput: any
         let dayInput: any
         let dateDiv: any
 
-        this.event = new Event(null, {description: selectedText}, settings)
-        this.modalUtils = new ModalUtils(app);
+        /* ---------------- Description ---------------- */ 
 
         new Setting(this.contentEl)
             .setName('Description')
@@ -51,8 +67,9 @@ export default class EventModal extends Modal {
                     });
                 })
 
-        dateDiv = this.contentEl.createEl("div", { text: `Date: ${this.event.toDateString()}` });
+        dateDiv = this.contentEl.createEl("h5", { text: `Date: ${this.event.toDateString()}` });
 
+        /* ---------------- Date Components ---------------- */
         new Setting(this.contentEl)
             .setName('Day')
             .addText((text) => {
@@ -103,14 +120,23 @@ export default class EventModal extends Modal {
 
         /* ---------------- Story ---------------- */
         const onStorySelect = (file: TFile) => { 
-            this.event.metadata.story = `[[${file.basename}]]`;
-            return this.event.metadata.story;
+            //Get the selected story from the story selector
+            this.event.metadata.stories = this.storySelector?.getSelectedStories() || null
+            return file.basename
         }
-        const storyModal = new StorySelector(this.app, onStorySelect);
-        storyModal.render(this.contentEl);
 
-     
+        this.storySelector = new StorySelector(this.app, onStorySelect, true)
 
+        //Add any stories from the current file to the stories list
+        const stories = this.fileManager.getCurrentFileStories()
+        if(stories && stories.length > 0){   
+            this.storySelector?.addStories(stories)
+        }
+
+        this.storySelector.render(contentEl);
+
+
+        /* ---------------- Submit Button ---------------- */
         new Setting(this.contentEl)
             .addButton((btn) => btn
             .setButtonText('Submit')
@@ -125,4 +151,5 @@ export default class EventModal extends Modal {
                 fileManager.saveFile({path: `Events/${this.event.metadata.title}.md`, noteObj: this.event, onSave})
             }));
     }
+    
 }

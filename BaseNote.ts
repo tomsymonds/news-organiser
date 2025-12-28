@@ -10,9 +10,7 @@ export class BaseNote {
     title: string = "New Note"
     metadata: any = {
         type: "Note",
-        tags: [],
-        icon: "LiNotebookPen",
-        iconColour: "#6B6A6A"
+        tags: []
     }
     contents: string = ""
 
@@ -20,25 +18,27 @@ export class BaseNote {
         this.tFile = tFile 
         this.settings = settings
         this.metadata = this.setMetadata(metadata)
-        console.log("BaseNote constructed", this)
     }
 
     public setTitle(){
-        if(!this.tFile){
-            this.title = "New Note"
+        if(this.tFile?.basename){
+            this.title = this.tFile.basename
             return
         }
-        const titleString = this.tFile.basename
-        this.title = titleString ? titleString  : this.title
-        // this.title = titleString ? this.titleSanitize(titleString) : this.titleSanitize(this.title)
-    }
+        if(this.metadata.title){
+            this.title = this.metadata.title
+            } else {
+                this.title = "New Note"
+            }
+            return 
+        }
+    
 
     public setMetadata(metadata: any){
         return this.mergeMetadata(this.metadata, metadata)
     }
 
     public mergeMetadata<T extends Record<string, any>>(defaultMetadata: T, suppliedMetadata: Partial<T>): T {
-        console.log("Merging metadata", defaultMetadata, suppliedMetadata)
         const result = { ...defaultMetadata };
         (Object.keys(suppliedMetadata) as (keyof T)[]).forEach((key) => {
             if (key in defaultMetadata) {
