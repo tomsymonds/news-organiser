@@ -28,7 +28,6 @@ export class FileManager {
 
     //Save a file creating if it doesn't exist and updating if it does.
     saveFile(options: any): any {
-        console.log("options", options)
         if(this.fileExists(options.path)){
             return this.updateFile(options)
         } else {
@@ -60,7 +59,6 @@ export class FileManager {
             return
         }
         const newFile = noteObj
-        console.log(newFile)
         //Create and update the tFile metadata
         this.vault.create(savePath, "").then((tFile) => {
             newFile.tFile = tFile

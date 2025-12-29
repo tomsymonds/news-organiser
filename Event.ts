@@ -22,6 +22,7 @@ export default class Event extends BaseNote {
     metadata: any 
     hasDate: boolean = false
     allowInvalid: boolean = false
+    
 
     constructor(tFile: TFile | null = null, metadata: any = {}, settings: any = {}) {
         const noteDefaults = {

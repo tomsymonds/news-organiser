@@ -54,7 +54,6 @@ export class PersonModal extends Modal {
         // Callback when an existing person is selected
         const onExistingPersonSelect = (person: TFile) => {
             const personObj = this.fileManager.getFile(person.path).file
-            console.log("Selected existing person:", personObj)
             if(personObj && personObj.tFile){
                 this.nameTextArea.setValue(personObj.title);
                 this.categorySelector.setCategoryValue(personObj.metadata.category)
