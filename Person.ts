@@ -20,13 +20,19 @@ export class Person extends BaseNote {
             aliases: [],
         };
         super(tFile, { ...noteDefaults, ...metadata }, settings)
-        this.setTitle(this.metadata.title || "New Note")
+        this.setTitle()
     }
 
     //Set the title and update aliases
     setTitle(title?: string){
-        if (title !== undefined) {
-            this.title = title;
+        if(title){
+            this.title = title
+        } else if(this.tFile?.basename){
+            this.title = this.tFile.basename
+        } else if (this.metadata.title){
+            this.title = this.metadata.title
+        } else {
+            this.title = "New Note"
         }
         this.setAliases()
     }
