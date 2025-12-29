@@ -76,7 +76,7 @@ export class PersonModal extends Modal {
                 text
                     .setValue(this.defaultText)
                     .onChange((value) => {
-                        this.person.title = value;
+                        this.person.setTitle(value);
                         this.personSelector.onInputUpdate(value)
                     });
                 })

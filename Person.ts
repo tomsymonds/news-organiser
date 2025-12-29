@@ -17,9 +17,23 @@ export class Person extends BaseNote {
             organisation: "",
             stories: [],
             tags: [],
+            aliases: [],
         };
         super(tFile, { ...noteDefaults, ...metadata }, settings)
-        this.setTitle()
+        this.setTitle(this.metadata.title || "New Note")
+    }
+
+    //Set the title and update aliases
+    setTitle(title?: string){
+        if (title !== undefined) {
+            this.title = title;
+        }
+        this.setAliases()
+    }
+
+    //Create aliases with the first alias being the title before the first comma
+    setAliases(){
+        this.metadata.aliases = [this.title.split(",")[0].trim()];
     }
 
     //Add a story link to the person's list of stories
