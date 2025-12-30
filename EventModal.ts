@@ -1,8 +1,8 @@
 import { App, Modal, Notice, Setting, TFile } from 'obsidian';
-import Event from 'Event'
-import StorySelector from 'StorySelector';
-import { FileManager, FilePostSaveHandler } from 'fileManagement';
-import { ModalUtils } from 'ModalUtils';
+import Event from './Event'
+import StorySelector from './StorySelector';
+import { FileManager, FilePostSaveHandler } from './fileManagement';
+import { ModalUtils } from './ModalUtils';
 import { de } from 'chrono-node';
 import { doesNotMatch } from 'assert';
 

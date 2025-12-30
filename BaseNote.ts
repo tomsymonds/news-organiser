@@ -1,5 +1,5 @@
 import { TFile } from "obsidian"
-import { PropertyFormatter } from "PropertyFormatter"
+import { PropertyFormatter } from "./PropertyFormatter"
 
 export class BaseNote {
 

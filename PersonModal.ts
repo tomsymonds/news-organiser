@@ -7,11 +7,11 @@ import {
 } from "obsidian";
 
 import PersonSelector from "./PersonSelector";
-import StorySelector from "StorySelector";
+import StorySelector from "./StorySelector";
 import CategorySelector from "./CategorySelector";
-import { FileManager, FilePostSaveHandler } from "fileManagement";
+import { FileManager, FilePostSaveHandler } from "./fileManagement";
 import { ModalUtils } from "./ModalUtils";
-import { Person } from 'Person'
+import { Person } from './Person'
 
 
 /**

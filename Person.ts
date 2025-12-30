@@ -1,5 +1,5 @@
 import { TFile } from "obsidian"
-import { BaseNote } from "BaseNote"
+import { BaseNote } from "./BaseNote"
 
 export class Person extends BaseNote {
 

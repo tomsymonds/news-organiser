@@ -8,9 +8,9 @@ import {
 
 import StorySelector from "./StorySelector";
 import CategorySelector from "./CategorySelector";
-import { FileManager, FilePostSaveHandler } from "fileManagement";
+import { FileManager, FilePostSaveHandler } from "./fileManagement";
 import { ModalUtils } from "./ModalUtils";
-import Note from "Note";
+import Note from "./Note";
 
 
 /**

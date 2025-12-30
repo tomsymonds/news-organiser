@@ -1,9 +1,9 @@
 import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import Event from 'Event'
-import EventModal from 'EventModal';
-import { FileWrangler, FileManager } from 'fileManagement';
+import Event from './Event'
+import EventModal from './EventModal';
+import { FileWrangler, FileManager } from './fileManagement';
 import { NoteModal } from './NoteModal'; 
-import { PersonModal } from 'PersonModal';
+import { PersonModal } from './PersonModal';
 
 
 

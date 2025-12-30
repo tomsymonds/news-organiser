@@ -1,5 +1,5 @@
-import EventParser from 'EventParser'
-import { BaseNote } from 'BaseNote'
+import EventParser from './EventParser'
+import { BaseNote } from './BaseNote'
 import { TFile } from 'obsidian'
 import { moment } from 'obsidian';
 
