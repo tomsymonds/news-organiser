@@ -1,11 +1,11 @@
 import { App, TFile, normalizePath, Vault, Notice} from "obsidian";
 import { BaseNote } from './BaseNote'
-import Note  from 'Note'
-import Event from "Event";
-import { Person } from "Person";
-import FileSearcher from "FileSearcher";
-import FileUpdater from "FileUpdater";
-import { ModalUtils } from 'ModalUtils';
+import Note  from './Note'
+import Event from "./Event";
+import { Person } from "./Person";
+import FileSearcher from "./FileSearcher";
+import FileUpdater from "./FileUpdater";
+import { ModalUtils } from './ModalUtils';
 
 //Manages files in the Obsidian vault. Handles Creating, Getting, and Updating text files.
 //Naming: 
