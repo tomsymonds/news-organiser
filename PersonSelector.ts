@@ -126,7 +126,7 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         // Filter stories based on query
         const filteredPeople = this.people.filter(person => 
             person.basename.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 10); // Limit to 10 suggestions
+        ).slice(0, 5); // Limit to 10 suggestions
 
         //If no matches found, show recent people instead
         if (filteredPeople.length === 0) return

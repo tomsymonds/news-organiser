@@ -8,7 +8,7 @@ import {
 
 import StorySelector from "./StorySelector";
 import CategorySelector from "./CategorySelector";
-import { FileManager } from "fileManagement";
+import { FileManager, FilePostSaveHandler } from "fileManagement";
 import { ModalUtils } from "./ModalUtils";
 import Note from "Note";
 
@@ -103,6 +103,7 @@ export class NoteModal extends Modal {
 					.setCta()
 					.onClick(() => {
 						this.createNote()
+						navigator.clipboard.writeText(`[[${this.note.metadata.title}]]`);
 						this.close();
 					})
 			);
@@ -111,17 +112,9 @@ export class NoteModal extends Modal {
 	//Create the note file based on the metadata entered
 	 private async createNote() {
 		const fileManager = new FileManager(this.app, {}); 
-		
-        const showNotice = (result: any) => {
-            new Notice(result.message)
-        }
-
-		const onSave = this.modalUtils.createSaveCallback(showNotice)
-		
-		const newNote = fileManager.saveFile({
-			path: `Notes/${this.note.metadata.title}.md`, 
-			noteObj: this.note, onSave
-	 	})
+		this.close();
+		const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
+		this.fileManager.saveFile({path: `Notes/${this.note.title}.md`, noteObj: this.note, postSaveHandler: postSaveHandler})
 	}
 
 

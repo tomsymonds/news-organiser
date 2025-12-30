@@ -9,7 +9,7 @@ import {
 import PersonSelector from "./PersonSelector";
 import StorySelector from "StorySelector";
 import CategorySelector from "./CategorySelector";
-import { FileManager } from "fileManagement";
+import { FileManager, FilePostSaveHandler } from "fileManagement";
 import { ModalUtils } from "./ModalUtils";
 import { Person } from 'Person'
 
@@ -85,9 +85,10 @@ export class PersonModal extends Modal {
                 })
 
 
-
         /* ---------------- Existing People Suggestions ---------------- */
         this.personSelector.render(this.contentEl);
+        this.personSelector.onInputUpdate(this.person.title)
+
         /* ---------------- Category ---------------- */
         const categorySelectorOnSelect  = (selectedCategory: string) => {
             this.person.metadata.category = selectedCategory;
@@ -122,17 +123,8 @@ export class PersonModal extends Modal {
 
     //Create the new note file
     private async createNote() {
-        
-        const showNotice = (result: any) => {
-            new Notice(result.message)
-        }
-
-        const onSave = this.modalUtils.createSaveCallback(showNotice)
-
-        const newNote = this.fileManager.saveFile({
-            path: `People/${this.person.title}.md`, 
-            noteObj: this.person, onSave
-        })
+        const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
+        this.fileManager.saveFile({path: `People/${this.person.title}.md`, noteObj: this.person, postSaveHandler: postSaveHandler})
     }
 
     onClose() {

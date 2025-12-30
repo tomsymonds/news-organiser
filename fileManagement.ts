@@ -1,10 +1,11 @@
-import { App, TFile, normalizePath, Vault} from "obsidian";
+import { App, TFile, normalizePath, Vault, Notice} from "obsidian";
 import { BaseNote } from './BaseNote'
 import Note  from 'Note'
 import Event from "Event";
 import { Person } from "Person";
 import FileSearcher from "FileSearcher";
 import FileUpdater from "FileUpdater";
+import { ModalUtils } from 'ModalUtils';
 
 //Manages files in the Obsidian vault. Handles Creating, Getting, and Updating text files.
 //Naming: 
@@ -27,12 +28,13 @@ export class FileManager {
     }
 
     //Save a file creating if it doesn't exist and updating if it does.
+    //Run PostSaveHandler after saving
     saveFile(options: any): any {
-        if(this.fileExists(options.path)){
-            return this.updateFile(options)
-        } else {
-            return this.createFile(options)
+        if(!options.postSaveHandler) {
+            throw new Error("FileManager: SaveFile: No PostSaveHandler provided")
         }
+        const saveHandler = this.fileExists(options.path) ? this.updateFile.bind(this) : this.createFile.bind(this)
+        saveHandler(options)
     }
 
         // Get a file from the vault based on its path and return a full file object
@@ -48,15 +50,14 @@ export class FileManager {
     //Create a new file in the vault based on a note object
     //Path - the path at which to save the object
     //noteObj - an instance of a noteObj class -- eg BaseNote, Event etc.
-    //onCreate: a callback function to call when the file is created or if there is an error
+    //postSaveHandler: a FilePostSaveHandler instance to run after saving
      private createFile(options: any): any{
-        const { path, noteObj, onSave } = options
-        if(!onSave) return {status: "error", message: "ERROR: No onCreate callback provided in FileManager createFile"}
+        const { path, noteObj, postSaveHandler } = options
         const { name, folder } = this.pathParts(path)
         const savePath = this.getPath(folder, noteObj.title ? noteObj.title : name)
         if(this.fileExists(savePath)){
-            onSave({status: "error", message: `Attempted to create but file exists`})
-            return
+            //onSave({status: "error", message: `Attempted to create but file exists`})
+            postSaveHandler.do({status: "error", message: `Attempted to create but file exists`})
         }
         const newFile = noteObj
         //Create and update the tFile metadata
@@ -74,30 +75,30 @@ export class FileManager {
                     frontmatter[key] = newFile.metadata[key];
                 });
             })
-            onSave({status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile})
+            //onSave({status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile})
+            postSaveHandler.do({status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile})
         }).catch((error) => {
-            onSave({status: "error", message: `Error creating ${newFile.type}: ${error}`})
+            //onSave({status: "error", message: `Error creating ${newFile.type}: ${error}`})
+            postSaveHandler.do({status: "error", message: `Error creating ${newFile.type}: ${error}`})
         });
-        return {status: "pending", message:""}  
     }   
 
     // Update the metadata and title of the current file. Does not update the file contents.
     private async updateFile(options: any): Promise<any>{
-        const { path, noteObj, onSave } = options
+        const { path, noteObj, postSaveHandler } = options
         const newTitle = noteObj.title
         const metadata = noteObj.metadata
-        if(!onSave) return {status: "error", message: "No onUpdate callback provided"}
         const { fullPath, name } = this.pathParts(path)
         const fileResult = this.getFile(fullPath)
         if(fileResult.status === "error") {
-            onSave({status: "error", message: fileResult.message})
+            postSaveHandler.do({status: "error", message: fileResult.message})
             return
         }
         const file = fileResult.file
-        if(!file) onSave({status: "error", message: "No file to update"})
-        if(!(file.tFile instanceof TFile)) onSave({status: "error", message: "File has no TFile"});
-        if(!file.metadata) onSave({status: "error", message: "File has no metadata"})
-        if(!metadata || Object.keys(metadata).length === 0) onSave({status: "error", message: "No metadata to update"})
+        if(!file) postSaveHandler.do({status: "error", message: "No file to update"})
+        if(!(file.tFile instanceof TFile)) postSaveHandler.do({status: "error", message: "File has no TFile"});
+        if(!file.metadata) postSaveHandler.do({status: "error", message: "File has no metadata"})
+        if(!metadata || Object.keys(metadata).length === 0) postSaveHandler.do({status: "error", message: "No metadata to update"})
         //Set the object's metadata to the new values
         file.setMetadata(metadata)
         this.app.fileManager.processFrontMatter(file.tFile, (frontMatter) => {
@@ -110,18 +111,18 @@ export class FileManager {
             if(file.status().isValid){
                 if(newTitle && file.tFile.basename !== newTitle){
                     await this.renameTFile(file.tFile, newTitle).then(() => {
-                        onSave({status: "ok", message: `Updated "${name}"`, file: file})
+                        postSaveHandler.do({status: "ok", message: `Updated "${name}"`, file: file})
                     }).catch((error) => {
-                        onSave({status: "error", message: `Error renaming: "${name}": ${error}`, file: file})
+                        postSaveHandler.do({status: "error", message: `Error renaming: "${name}": ${error}`, file: file})
                     })
                 } else { 
-                    onSave({status: "ok", message: `Updated: "${name}"`, file: file})
+                    postSaveHandler.do({status: "ok", message: `Updated: "${name}"`, file: file})
                 }
             } else {
-                onSave({status: "error", message: `Error updating: "${name}". ${fileStatus.message}`, file: file})  
+                postSaveHandler.do({status: "error", message: `Error updating: "${name}". ${fileStatus.message}`, file: file})  
             } 
         }).catch((error) => {
-            onSave({status: "error", message: `Error updating: "${name}": ${error}`, file: file})
+            postSaveHandler.do({status: "error", message: `Error updating: "${name}": ${error}`, file: file})
         })          
     }
 
@@ -356,9 +357,32 @@ export class FileWrangler {
             notUpdatedResults
         }
     }
-
-
-
-    
-
 }
+
+//A handler to run after saving a file
+export class FilePostSaveHandler {
+    app: App
+    settings: any
+    options: any
+    modalUtils: ModalUtils
+
+    constructor(app: App, settings: any | {}, options: any | {}) {
+        this.app = app
+        this.settings = settings || {}
+        this.options = options || {}
+        this.modalUtils = new ModalUtils(app)
+    }
+    //Perform post-save actions based on options
+    public do(result: any): void {
+        const {message, file} = result
+        //Notifications
+        if(this.options.doNotify){
+            if(message) new Notice(result.message, this.settings.notificationDuration || 4000)
+        }
+        //Clipboard
+        if(this.options.doClipboard){
+            if(file) navigator.clipboard.writeText(`[[${file.tFile.basename}]]`);
+        }
+    }
+}
+

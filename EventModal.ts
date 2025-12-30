@@ -1,9 +1,10 @@
 import { App, Modal, Notice, Setting, TFile } from 'obsidian';
 import Event from 'Event'
 import StorySelector from 'StorySelector';
-import { FileManager } from 'fileManagement';
+import { FileManager, FilePostSaveHandler } from 'fileManagement';
 import { ModalUtils } from 'ModalUtils';
 import { de } from 'chrono-node';
+import { doesNotMatch } from 'assert';
 
 //Displays an Obsidian modal to create an event note
 export default class EventModal extends Modal {
@@ -148,15 +149,11 @@ export default class EventModal extends Modal {
             .setCta()
             .onClick(() => {
                 this.close();
-                const fileManager = new FileManager(this.app, {})
-                const showNotice = (result: any) => {
-                    new Notice(result.message)
-                }
+                const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
+                this.fileManager.saveFile({path: `Events/${this.event.title}.md`, noteObj: this.event, postSaveHandler: postSaveHandler})
+            })
 
-
-		        const onSave = this.modalUtils.createSaveCallback(showNotice)
-                fileManager.saveFile({path: `Events/${this.event.metadata.title}.md`, noteObj: this.event, onSave})
-            }));
+        );
     }
     
 }
