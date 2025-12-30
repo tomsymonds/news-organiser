@@ -25,21 +25,26 @@ export class NoteModal extends Modal {
 	private storySelector: StorySelector
     private currentStory: TFile | undefined
 	private fileManager: FileManager
+	private selectedText: string 
+	private settings: any
 
-	constructor(app: App, type: string, components: string[]) {
+	constructor(app: App, selectedText: string, settings: any = {}) {
 		super(app);
-		this.components = components;
+		//this.components = components;
 		this.note = new Note(null, {}, {})
-		this.type = type
+		this.type = "Note"
 		this.modalUtils = new ModalUtils(app);
 		this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
+		this.selectedText = selectedText
     }
 
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h2", { text: `New Note` });
+		this.note.metadata.title = this.selectedText || ""
+		this.note.setTitle()
 
 		/* ---------------- Title ---------------- */
 		new Setting(contentEl)

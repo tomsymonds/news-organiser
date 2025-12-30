@@ -19,9 +19,7 @@ import { Person } from 'Person'
  */
 export class PersonModal extends Modal {
     private person: Person;
-    private insertIntoCurrent = false;
-    private components: string[] = []
-    private defaultText: string
+    private selectedText: string
     private modalUtils: ModalUtils;
     private personSelector: any
     private fileManager: FileManager
@@ -29,21 +27,26 @@ export class PersonModal extends Modal {
     private categorySelector: CategorySelector 
     private storySelector: StorySelector | null = null
     private currentStory: TFile | undefined
+    private type: string = "Person"
+    private settings: any
 
-    constructor(app: App, defaultText: string, components: string[], doInsert: boolean = false) {
+    constructor(app: App, selectedText: string, settings: any = {}) {
         super(app);
-        this.components = components;
+        //this.components = components;
         this.person = new Person(null, {}, null)
         this.person.metadata.type = "Person";
-        this.defaultText = defaultText
-        this.insertIntoCurrent = doInsert;
+        this.selectedText = selectedText
         this.modalUtils = new ModalUtils(app);
         this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
+        this.selectedText = selectedText || ""
     }
+
 
     onOpen() {
         const { contentEl } = this;
+        this.person.metadata.title = this.selectedText || ""
+		this.person.setTitle()
 
         // Callback when a story is selected
         const onStorySelect = (file: TFile): string => { 
@@ -64,7 +67,7 @@ export class PersonModal extends Modal {
             }
         }
 
-        this.personSelector = new PersonSelector(this.app, this.defaultText, onExistingPersonSelect);
+        this.personSelector = new PersonSelector(this.app, this.selectedText, onExistingPersonSelect);
         contentEl.empty();
         contentEl.createEl("h2", { text: `New ${this.person.metadata.type}` });
 
@@ -74,7 +77,7 @@ export class PersonModal extends Modal {
             .addTextArea((text) => {
                 this.nameTextArea = text;
                 text
-                    .setValue(this.defaultText)
+                    .setValue(this.selectedText)
                     .onChange((value) => {
                         this.person.setTitle(value);
                         this.personSelector.onInputUpdate(value)

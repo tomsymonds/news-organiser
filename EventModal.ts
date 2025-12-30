@@ -14,12 +14,16 @@ export default class EventModal extends Modal {
     private storySelector: StorySelector | null = null
     //The currently active story note when the modal is opened. Null if none or not a story
     private currentFile: any | undefined 
+    private selectedText: string
+    private settings: any
 
-    constructor(app: App, type: string, selectedText: string, settings: any) {
+    constructor(app: App, selectedText: string, settings: any = {}) {
 
         super(app);
         this.fileManager = new FileManager(app, {});
         this.currentFile = this.fileManager.getCurrentActiveFileOfType(null)
+        this.selectedText = selectedText
+        this.modalUtils = new ModalUtils(app);
         
         //Add a listener for Enter key to submit the form
         this.scope.register([], 'Enter', (evt: KeyboardEvent) => {

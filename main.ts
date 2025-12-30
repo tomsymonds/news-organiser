@@ -30,57 +30,31 @@ export default class NewsOrganiser extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
-
-		this.addCommand({
-			id: 'open-fileManager-test',
-			name: 'File Manager Test',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const fileWrangler = new FileWrangler(this.app, this.settings)
-				fileWrangler.findAndUpdate({
-					terms: {isType: "Event"},
-					updates: {addDateProperties: "eventDate"}
-				}).then((result) => {
-					//new Notice(result.message)
-				})
-			}
-		}); 
-
 		this.addCommand({
  			id: "news-organiser-create-note",
  			name: "Create Note",
- 			callback: () => new NoteModal(this.app, "Note", ["title", "category", "story"]).open(),
+ 			editorCallback: (editor: Editor, view: MarkdownView) => {
+				const text = editor.getSelection();
+				new NoteModal(this.app, text, this.settings).open()
+			}
  		});
 
-		this.addCommand({
- 			id: "news-organiser-create-event",
- 			name: "Create Event",
- 			callback: () => new EventModal(this.app, "Create", "", this.settings).open(),
- 		});
-		
 		this.addCommand({
  			id: "news-organiser-create-person",
  			name: "Create Person",
-			callback: () => {
-				new PersonModal(this.app, "", ["title", "category", "stories"], false).open();
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+				const text = editor.getSelection();
+				new PersonModal(this.app, text, this.settings).open()
 			}
  		});
-
-		this.addCommand({
- 			id: "news-organiser-create-person-and-insert",
- 			name: "Create Person and Insert Link",
-			callback: () => {
-				new PersonModal(this.app, "", ["title", "category", "story"], true).open();
-			}
- 		});
-		
 
 		// Create an event from selected text, open a modal to edit details, and save to file
 		this.addCommand({
-			id: 'news-organiser-create-event-selection',
-			name: 'Create Event From Selection',
+			id: 'news-organiser-create-event',
+			name: 'Create Event',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const text = editor.getSelection();
-				new EventModal(this.app, "Create", text, this.settings).open()
+				new EventModal(this.app, text, this.settings).open()
 			}
 		});
 
