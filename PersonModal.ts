@@ -19,7 +19,7 @@ import { Person } from './Person'
  */
 export class PersonModal extends Modal {
     private person: Person;
-    private selectedText: string
+    private selectedText: string | ""
     private modalUtils: ModalUtils;
     private personSelector: any
     private fileManager: FileManager
@@ -30,12 +30,12 @@ export class PersonModal extends Modal {
     private type: string = "Person"
     private settings: any
 
-    constructor(app: App, selectedText: string, settings: any = {}) {
+    constructor(app: App, selectedText: string | "", settings: any = {}) {
         super(app);
         //this.components = components;
         this.person = new Person(null, {}, null)
         this.person.metadata.type = "Person";
-        this.selectedText = selectedText
+        this.selectedText = selectedText || ""
         this.modalUtils = new ModalUtils(app);
         this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")

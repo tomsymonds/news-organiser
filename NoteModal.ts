@@ -25,10 +25,10 @@ export class NoteModal extends Modal {
 	private storySelector: StorySelector
     private currentStory: TFile | undefined
 	private fileManager: FileManager
-	private selectedText: string 
+	private selectedText: string | ""
 	private settings: any
 
-	constructor(app: App, selectedText: string, settings: any = {}) {
+	constructor(app: App, selectedText: string | null, settings: any = {}) {
 		super(app);
 		//this.components = components;
 		this.note = new Note(null, {}, {})
@@ -36,7 +36,7 @@ export class NoteModal extends Modal {
 		this.modalUtils = new ModalUtils(app);
 		this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
-		this.selectedText = selectedText
+		this.selectedText = selectedText || ""
     }
 
 	onOpen() {

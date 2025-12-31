@@ -33,8 +33,9 @@ export default class NewsOrganiser extends Plugin {
 		this.addCommand({
  			id: "news-organiser-create-note",
  			name: "Create Note",
- 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const text = editor.getSelection();
+ 			callback: () => {
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const text = view?.editor?.getSelection() || "";
 				new NoteModal(this.app, text, this.settings).open()
 			}
  		});
@@ -42,8 +43,9 @@ export default class NewsOrganiser extends Plugin {
 		this.addCommand({
  			id: "news-organiser-create-person",
  			name: "Create Person",
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const text = editor.getSelection();
+			callback: () => {
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const text = view?.editor?.getSelection() || "";
 				new PersonModal(this.app, text, this.settings).open()
 			}
  		});
@@ -52,8 +54,9 @@ export default class NewsOrganiser extends Plugin {
 		this.addCommand({
 			id: 'news-organiser-create-event',
 			name: 'Create Event',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const text = editor.getSelection();
+			callback: () => {
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const text = view?.editor?.getSelection() || "";
 				new EventModal(this.app, text, this.settings).open()
 			}
 		});

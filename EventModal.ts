@@ -23,7 +23,7 @@ export default class EventModal extends Modal {
         super(app);
         this.fileManager = new FileManager(app, {});
         this.currentFile = this.fileManager.getCurrentActiveFileOfType(null)
-        this.selectedText = selectedText
+        this.selectedText = selectedText || ""
         this.modalUtils = new ModalUtils(app);
         
         //Add a listener for Enter key to submit the form

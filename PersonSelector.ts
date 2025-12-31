@@ -15,13 +15,13 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
     private onSelect: any;
     private personTextComponent: TextComponent | null = null;
     private suggestionsContainer: HTMLElement | null = null;
-    private defaultText: string
+    private defaultText: string | null = null;
 
     constructor(app: App, defaultText: string, onSelect: (file: TFile) => void) {
         super(app);
         this.onSelect = onSelect;
         this.setPlaceholder("Select a person");
-        this.defaultText = defaultText
+        this.defaultText = defaultText || null;
         this.people = this.getPeople()
     }
 
