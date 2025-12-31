@@ -2,11 +2,10 @@
   "compilerOptions": {
     "inlineSourceMap": true,
     "inlineSources": true,
-    "module": "Node16",
+    "module": "ESNext",
     "target": "ES6",
     "allowJs": true,
     "noImplicitAny": true,
-    "moduleResolution": "Node16",
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
@@ -21,3 +20,4 @@
     "**/*.ts"
 , "utils.js"  ]
 }
+
