@@ -37,6 +37,7 @@ export default class Event extends BaseNote {
             description: ""
         };
         super(tFile, { ...noteDefaults, ...metadata }, settings)
+        this.setMetadata(metadata)
 
     }    
 
