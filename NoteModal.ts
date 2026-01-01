@@ -70,12 +70,13 @@ export class NoteModal extends Modal {
 		categorySelector.renderNewCategoryInput(contentEl);
 
 		/* ---------------- Stories ---------------- */
-		const onStorySelect = (file: TFile) => { 
+		const onStoriesChange = () => { 
+			console.log("Stories changed");
             this.note.metadata.stories = this.storySelector?.getSelectedStories() || []
-            return file.basename
+            return this.note.metadata.stories;
         }
 
-		this.storySelector = new StorySelector(this.app, onStorySelect, true)
+		this.storySelector = new StorySelector(this.app, onStoriesChange, true)
 		this.storySelector.render(contentEl);
 
         //Add any stories from the current file to the stories list

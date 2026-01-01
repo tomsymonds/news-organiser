@@ -124,13 +124,12 @@ export default class EventModal extends Modal {
             })
 
         /* ---------------- Story ---------------- */
-        const onStorySelect = (file: TFile) => { 
-            //Get the selected story from the story selector
-            this.event.metadata.stories = this.storySelector?.getSelectedStories() || null
-            return file.basename
+        const onStoriesChange = () => { 
+            this.event.metadata.stories = this.storySelector?.getSelectedStories() || []
+            return this.event.metadata.stories;
         }
 
-        this.storySelector = new StorySelector(this.app, onStorySelect, true)
+        this.storySelector = new StorySelector(this.app, onStoriesChange, true)
 
         //Add any stories from the current file to the stories list
         const stories = this.fileManager.getCurrentFileStories()

@@ -12,16 +12,16 @@ import {
  */
 export default class StorySelector extends FuzzySuggestModal<TFile> {
     private stories: TFile[];
-    private onSelect: any;
+    private onChange: any;
     private storyTextComponent: TextComponent | null = null;
     private suggestionsContainer: HTMLElement | null = null;
     private selectedStories: string[] = [];
     private selectedStoriesContainer: HTMLElement | null = null;
     private isList: boolean = true;
 
-    constructor(app: App, onSelect: (file: TFile) => string, isList: boolean = true) {
+    constructor(app: App, onChange: (file: TFile) => string, isList: boolean = true) {
         super(app);
-        this.onSelect = onSelect;
+        this.onChange = onChange;
         this.isList = isList;
         this.setPlaceholder("Select a Story");
     }
@@ -51,9 +51,8 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
 
     //Handle item selection
     onChooseItem(item: TFile): void {
-        this.onSelect(item);
+        this.onChange();
     }
-
     //Render the story suggestions and recent stories UI
     render(container: HTMLElement): void {
         const stories = this.getStoryNotes();
@@ -67,7 +66,7 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
      * Renders a text box with auto-complete suggestions for story titles
      */
     renderStoryTextBox(container: HTMLElement, stories: TFile[]): TextComponent {
-        const onStorySelect = this.onSelect;
+        const onStorySelect = this.onChange;
         let selectedStory: TFile | null = null;
 
         const setting = new Setting(container)
@@ -285,7 +284,7 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
                     this.storyTextComponent.setValue('');
                 }
                 this.addStories([`[[${story.basename}]]`]);
-                this.onSelect(story);
+                this.onChange();
             });
         });
     }
@@ -323,6 +322,7 @@ export default class StorySelector extends FuzzySuggestModal<TFile> {
         }
         this.selectedStories = this.selectedStories.filter(s => s !== storyLink);
         this.updateSelectedStoriesDisplay();
+        this.onChange();
     }
 
     //Render the selected stories container

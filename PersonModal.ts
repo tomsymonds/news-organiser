@@ -49,9 +49,9 @@ export class PersonModal extends Modal {
 		this.person.setTitle()
 
         // Callback when a story is selected
-        const onStorySelect = (file: TFile): string => { 
+	    const onStoriesChange = () => { 
             this.person.metadata.stories = this.storySelector?.getSelectedStories() || []
-            return file.basename
+            return this.person.metadata.stories;
         }
 
         // Callback when an existing person is selected
@@ -99,7 +99,7 @@ export class PersonModal extends Modal {
 
 
         /* ---------------- Stories ---------------- */
-        this.storySelector = new StorySelector(this.app, onStorySelect, true);
+        this.storySelector = new StorySelector(this.app, onStoriesChange, true);
         //Add any stories from the current file to the stories list
         const stories = this.fileManager.getCurrentFileStories()
         if(stories && stories.length > 0){   
