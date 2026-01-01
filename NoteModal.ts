@@ -71,7 +71,6 @@ export class NoteModal extends Modal {
 
 		/* ---------------- Stories ---------------- */
 		const onStoriesChange = () => { 
-			console.log("Stories changed");
             this.note.metadata.stories = this.storySelector?.getSelectedStories() || []
             return this.note.metadata.stories;
         }
