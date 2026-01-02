@@ -1,34 +1,28 @@
 import {
     App,
-    Modal,
     Setting,
-    TFile,
-    Notice,
+    TFile
 } from "obsidian";
 
 import PersonSelector from "./PersonSelector";
 import StorySelector from "./StorySelector";
 import CategorySelector from "./CategorySelector";
-import { FileManager, FilePostSaveHandler } from "./fileManagement";
-import { ModalUtils } from "./ModalUtils";
+import { FilePostSaveHandler } from "./fileManagement";
 import { Person } from './Person'
-
+import NewsModal from "./NewsModal";
 
 /**
  * Modal to create a new note
  */
-export class PersonModal extends Modal {
+export class PersonModal extends NewsModal {
     private person: Person;
     private selectedText: string | ""
-    private modalUtils: ModalUtils;
     private personSelector: any
-    private fileManager: FileManager
     private nameTextArea: any = null
     private categorySelector: CategorySelector 
     private storySelector: StorySelector | null = null
     private currentStory: TFile | undefined
     private type: string = "Person"
-    private settings: any
 
     constructor(app: App, selectedText: string | "", settings: any = {}) {
         super(app);
@@ -36,8 +30,6 @@ export class PersonModal extends Modal {
         this.person = new Person(null, {}, null)
         this.person.metadata.type = "Person";
         this.selectedText = selectedText || ""
-        this.modalUtils = new ModalUtils(app);
-        this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
         this.selectedText = selectedText || ""
     }

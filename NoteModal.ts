@@ -8,33 +8,28 @@ import {
 
 import StorySelector from "./StorySelector";
 import CategorySelector from "./CategorySelector";
-import { FileManager, FilePostSaveHandler } from "./fileManagement";
-import { ModalUtils } from "./ModalUtils";
+import { FilePostSaveHandler } from "./fileManagement";
 import Note from "./Note";
+import NewsModal from "./NewsModal";
 
 
 /**
  * Modal to create a new note
  */
-export class NoteModal extends Modal {
+export class NoteModal extends NewsModal {
 	private note: Note
 	private insertIntoCurrent = false;
 	private components: string[] = []
 	private type: string
-	private modalUtils: ModalUtils;
 	private storySelector: StorySelector
     private currentStory: TFile | undefined
-	private fileManager: FileManager
 	private selectedText: string | ""
-	private settings: any
 
 	constructor(app: App, selectedText: string | null, settings: any = {}) {
-		super(app);
+		super(app, settings);
 		//this.components = components;
 		this.note = new Note(null, {}, {})
 		this.type = "Note"
-		this.modalUtils = new ModalUtils(app);
-		this.fileManager = new FileManager(app, {});
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
 		this.selectedText = selectedText || ""
     }
@@ -111,7 +106,6 @@ export class NoteModal extends Modal {
 
 	//Create the note file based on the metadata entered
 	 private async createNote() {
-		const fileManager = new FileManager(this.app, {}); 
 		this.close();
 		const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
 		this.fileManager.saveFile({path: `Notes/${this.note.title}.md`, noteObj: this.note, postSaveHandler: postSaveHandler})

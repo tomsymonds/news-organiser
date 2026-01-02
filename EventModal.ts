@@ -3,46 +3,29 @@ import Event from './Event'
 import StorySelector from './StorySelector';
 import { FileManager, FilePostSaveHandler } from './fileManagement';
 import { ModalUtils } from './ModalUtils';
+import NewsModal from './NewsModal';
 import { de } from 'chrono-node';
 import { doesNotMatch } from 'assert';
 
 //Displays an Obsidian modal to create an event note
-export default class EventModal extends Modal {
+export default class EventModal extends NewsModal {
 
     private event: Event;
-    private modalUtils: ModalUtils;
-    private fileManager: FileManager
     private storySelector: StorySelector | null = null
     //The currently active story note when the modal is opened. Null if none or not a story
     private currentFile: any | undefined 
     private selectedText: string
-    private settings: any
 
     constructor(app: App, selectedText: string, settings: any = {}) {
 
-        super(app);
-        this.fileManager = new FileManager(app, {});
+        super(app, settings);
         this.currentFile = this.fileManager.getCurrentActiveFileOfType(null)
         this.selectedText = selectedText || ""
-        this.modalUtils = new ModalUtils(app);
         
-        //Add a listener for Enter key to submit the form
-        this.scope.register([], 'Enter', (evt: KeyboardEvent) => {
-            if (evt.isComposing) {
-                return;
-            }
-            evt.preventDefault()	
-            const actionBtn = document
-                    .getElementsByClassName('mod-cta')
-                    .item(0) as HTMLButtonElement | null;
-                actionBtn?.click();
-        });
-
         //The event being created
         this.event = new Event(null, {
             description: selectedText
         }, settings)
-        this.modalUtils = new ModalUtils(app);
     }
 
     onOpen() {
