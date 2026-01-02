@@ -1,9 +1,12 @@
-import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, editorLivePreviewField } from 'obsidian';
 import Event from './Event'
 import EventModal from './EventModal';
 import { FileWrangler, FileManager } from './fileManagement';
 import { NoteModal } from './NoteModal'; 
 import { PersonModal } from './PersonModal';
+import { SCRIPT_VIEW, ScriptView } from './views/ScriptView';
+import DurationCounter from './DurationCounter';
+import { createReadingTimePlugin } from './readingTimePlugin';
 
 
 
@@ -22,6 +25,7 @@ const DEFAULT_SETTINGS: NewsOrganiserSettings = {
 
 export default class NewsOrganiser extends Plugin {
 	settings: NewsOrganiserSettings;
+	durationCounter: DurationCounter;
 
 	async onload() {
 		await this.loadSettings();
@@ -71,6 +75,20 @@ export default class NewsOrganiser extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		//this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
+
+		/* Views */
+		this.registerView(
+      		SCRIPT_VIEW,
+      		(leaf) => new ScriptView(leaf)
+    	);
+
+
+		// Register editor extension to show reading time in edit mode in scripts
+		this.registerEditorExtension([createReadingTimePlugin({
+			wordsPerMinute: 200,
+			requiredFrontmatterType: 'Script'
+		})]);
 	}
 
 	onunload() {
@@ -84,6 +102,26 @@ export default class NewsOrganiser extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	async activateView() {
+		const { workspace } = this.app;
+
+		let leaf: WorkspaceLeaf | null = null;
+		const leaves = workspace.getLeavesOfType(SCRIPT_VIEW);
+
+		if (leaves.length > 0) {
+			// A leaf with our view already exists, use that
+			leaf = leaves[0];
+			} else {
+			// Our view could not be found in the workspace, create a new leaf
+			// in the right sidebar for it
+			leaf = workspace.getLeaf(false);
+			if(leaf) await leaf.setViewState({ type: SCRIPT_VIEW, active: true });
+		}
+
+		// "Reveal" the leaf in case it is in a collapsed sidebar
+		if(leaf)workspace.revealLeaf(leaf);
+  	}
 }
 
 class EventSettingsTab extends PluginSettingTab {
