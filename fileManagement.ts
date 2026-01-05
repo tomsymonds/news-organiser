@@ -75,10 +75,10 @@ export class FileManager {
                     frontmatter[key] = newFile.metadata[key];
                 });
             })
-            //onSave({status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile})
+            return {status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile}
             postSaveHandler.do({status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile})
         }).catch((error) => {
-            //onSave({status: "error", message: `Error creating ${newFile.type}: ${error}`})
+            return {status: "error", message: `Error creating ${newFile.type}: ${error}`}
             postSaveHandler.do({status: "error", message: `Error creating ${newFile.type}: ${error}`})
         });
     }   
@@ -106,6 +106,11 @@ export class FileManager {
                 frontMatter[key] = file.metadata[key];
             })
         }).then(async () => {
+            // Append contents if provided
+            if(noteObj.contents && noteObj.contents.trim().length > 0) {
+                const currentContent = await this.vault.read(file.tFile);
+                await this.vault.modify(file.tFile, currentContent + noteObj.contents);
+            }
             //Update the file name if it has changed    
             const fileStatus = file.status()
             if(file.status().isValid){

@@ -4,6 +4,7 @@ import EventModal from './EventModal';
 import { FileWrangler, FileManager } from './fileManagement';
 import { NoteModal } from './NoteModal'; 
 import { PersonModal } from './PersonModal';
+import { LogModal } from './LogModal';
 
 
 
@@ -58,6 +59,17 @@ export default class NewsOrganiser extends Plugin {
 				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 				const text = view?.editor?.getSelection() || "";
 				new EventModal(this.app, text, this.settings).open()
+			}
+		});
+
+		// Create an event from selected text, open a modal to edit details, and save to file
+		this.addCommand({
+			id: 'news-organiser-create-log-entry',
+			name: 'Add Log Entry',
+			callback: () => {
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const text = view?.editor?.getSelection() || "";
+				new LogModal(this.app, text, this.settings).open()
 			}
 		});
 

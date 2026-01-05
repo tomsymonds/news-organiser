@@ -53,7 +53,7 @@ export class BaseNote {
         const metadata: any = Object.keys(this.metadata).map((key) => {
             return `${key}: ${formatter.formatValue(this.metadata[key])}`
         })
-        return `---\n${metadata.join("\n")}\n---\n`
+        return `---\n${metadata.join("\n")}\n---\n${this.contents}`
     }    
 
     public isSaved(){
