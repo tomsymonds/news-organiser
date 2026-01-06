@@ -11,3 +11,10 @@ textarea {
     max-width: 100%;
     height: 50px;
 }
+
+.reading-time-estimate {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-left: 10px;
+    padding-top: -10px
+}

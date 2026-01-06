@@ -1,9 +1,11 @@
-import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, editorLivePreviewField } from 'obsidian';
 import Event from './Event'
 import EventModal from './EventModal';
 import { FileWrangler, FileManager } from './fileManagement';
 import { NoteModal } from './NoteModal'; 
 import { PersonModal } from './PersonModal';
+import DurationCounter from './DurationCounter';
+import { createReadingTimePlugin } from './readingTimePlugin';
 import { LogModal } from './LogModal';
 
 
@@ -22,7 +24,7 @@ const DEFAULT_SETTINGS: NewsOrganiserSettings = {
 }	
 
 export default class NewsOrganiser extends Plugin {
-	settings: NewsOrganiserSettings;
+	settings: NewsOrganiserSettings
 
 	async onload() {
 		await this.loadSettings();
@@ -83,6 +85,17 @@ export default class NewsOrganiser extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		//this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
+
+		/* Views */
+
+
+
+		// Register editor extension to show reading time in edit mode in scripts
+		this.registerEditorExtension([createReadingTimePlugin({
+			wordsPerMinute: 200,
+			requiredFrontmatterType: 'Script'
+		})]);
 	}
 
 	onunload() {
@@ -96,6 +109,7 @@ export default class NewsOrganiser extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
 }
 
 class EventSettingsTab extends PluginSettingTab {
