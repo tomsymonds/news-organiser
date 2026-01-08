@@ -123,10 +123,46 @@ export default class PersonSelector extends FuzzySuggestModal<TFile> {
         // If no query, show recent stories by default
         if (!query.trim()) return;
 
-        // Filter stories based on query
-        const filteredPeople = this.people.filter(person => 
-            person.basename.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 5); // Limit to 10 suggestions
+        // Filter people based on query
+        // Include people with matching aliases
+        const filteredPeople = this.people.filter(person => {
+            const queryLower = query.toLowerCase();
+            
+            // Check if basename matches
+            if (person.basename.toLowerCase().includes(queryLower)
+                ||
+                queryLower.includes(person.basename.toLowerCase())    
+            ) {
+                return true;
+            }
+            
+            // Check if any alias matches
+            const cache = this.app.metadataCache.getFileCache(person);
+            const aliases = cache?.frontmatter?.aliases;
+            const alias = cache?.frontmatter?.alias;
+            
+            // Combine both alias and aliases properties
+            const allAliases = [];
+            if (aliases) {
+                const aliasArray = Array.isArray(aliases) ? aliases : [aliases];
+                allAliases.push(...aliasArray);
+            }
+            if (alias) {
+                const aliasArray = Array.isArray(alias) ? alias : [alias];
+                allAliases.push(...aliasArray);
+            }
+            
+            if (allAliases.length > 0) {
+                return allAliases.some((a: string) => 
+                    a.toLowerCase().includes(queryLower)
+                    ||
+                    queryLower.includes(a.toLowerCase())    
+
+                );
+            }
+            
+            return false;
+        }).slice(0, 5); // Limit to 10 suggestions
 
         //If no matches found, show recent people instead
         if (filteredPeople.length === 0) return

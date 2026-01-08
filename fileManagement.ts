@@ -75,11 +75,11 @@ export class FileManager {
                     frontmatter[key] = newFile.metadata[key];
                 });
             })
-            return {status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile}
             postSaveHandler.do({status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile})
+            return {status: "ok", message: `Created new ${newFile.metadata.type.toLowerCase()}: ${name} in ${folder}`, file: newFile}
         }).catch((error) => {
-            return {status: "error", message: `Error creating ${newFile.type}: ${error}`}
             postSaveHandler.do({status: "error", message: `Error creating ${newFile.type}: ${error}`})
+            return {status: "error", message: `Error creating ${newFile.type}: ${error}`}
         });
     }   
 
