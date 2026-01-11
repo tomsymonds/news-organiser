@@ -125,12 +125,21 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 				return Decoration.none;
 			}
 			
+			// Remove frontmatter from text before processing
+			let contentText = text;
+			let contentStartPos = 0;
+			if (frontmatterMatch) {
+				const frontmatterEnd = frontmatterMatch[0].length;
+				contentText = text.substring(frontmatterEnd);
+				contentStartPos = frontmatterEnd;
+			}
+			
             //
 			const decorations: Array<{pos: number, decoration: any}> = [];
-			const lines = text.split('\n');
+			const lines = contentText.split('\n');
 			
 			let currentParagraph: string[] = [];
-			let currentPos = 0;
+			let currentPos = contentStartPos;
 			let currentSectionWords = 0;
 			let currentHeadingPos = -1;
 

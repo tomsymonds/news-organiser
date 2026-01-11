@@ -30,6 +30,7 @@ export class FileManager {
     //Save a file creating if it doesn't exist and updating if it does.
     //Run PostSaveHandler after saving
     saveFile(options: any): any {
+        console.log("FileManager: SaveFile", options)
         if(!options.postSaveHandler) {
             throw new Error("FileManager: SaveFile: No PostSaveHandler provided")
         }
@@ -255,6 +256,11 @@ export class FileManager {
     //Takes a path and a noteObj. If the noteObj has a title, this is used as the name of the file.
     private pathParts(filePath: string): {folder: string, name: string, fullPath: string} {
         const parts = filePath.split("/")
+        //Consider sanitising parts here to remove invalid filename characters
+        parts.forEach((part, index) => {
+           parts[index] = part.replace(/[\/\\:*?"<>|]/g, "").trim()
+        })
+        console.log(parts)
         const nameWithExt = parts.pop() || ""
         const folder = parts.join("/")
         const name = nameWithExt.endsWith(".md") ? nameWithExt.slice(0, -3) : nameWithExt

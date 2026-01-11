@@ -50,7 +50,7 @@ export class NoteModal extends NewsModal {
                     .onChange((value) => {
 						//Save the title in both metadata and note title
 						this.note.metadata.title = value;
-						this.note.title = value;
+						this.note.setTitle();
                     });
                 })
 

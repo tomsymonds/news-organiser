@@ -24,7 +24,7 @@ export class BaseNote {
             return
         }
         if(this.metadata.title){
-            this.title = this.metadata.title
+            this.title = this.titleSanitize(this.metadata.title)
             } else {
                 this.title = "New Note"
             }
