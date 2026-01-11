@@ -2,7 +2,7 @@ import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetTy
 
 // Widget to display reading time at the end of paragraphs
 class ReadingTimeWidget extends WidgetType {
-	constructor(readonly wordCount: number, private readonly wordsPerMinute: number) {
+	constructor(readonly wordCount: number, private readonly wordsPerMinute: number, private readonly showWords: boolean = false) {
 		super();
 	}
 
@@ -27,14 +27,18 @@ class ReadingTimeWidget extends WidgetType {
 			timeDisplay = seconds > 0 ? `${minutes}'${seconds}"` : `${minutes} ''`;
 		}
 		
-		span.textContent = `${timeDisplay}`;
+		if (this.showWords) {
+			span.textContent = `${timeDisplay} ${this.wordCount}w`;
+		} else {
+			span.textContent = `${timeDisplay}`;
+		}
 		return span;
 	}
 }
 
 // Widget to display section total reading time after headings
 class SectionReadingTimeWidget extends WidgetType {
-	constructor(readonly wordCount: number, private readonly wordsPerMinute: number) {
+	constructor(readonly wordCount: number, private readonly wordsPerMinute: number, private readonly showWords: boolean = false) {
 		super();
 	}
 
@@ -59,7 +63,12 @@ class SectionReadingTimeWidget extends WidgetType {
 			timeDisplay = seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min`;
 		}
 		
-		span.textContent = `${timeDisplay}`;
+		if (this.showWords) {
+			span.textContent = `${timeDisplay} ${this.wordCount}w`;
+		} else {
+			span.textContent = `${timeDisplay}`;
+		}
+		return span;
 		return span;
 	}
 }
@@ -70,7 +79,7 @@ export interface ReadingTimePluginOptions {
 }
 // Main function to create the reading time plugin
 export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
-	const wpm = options?.wordsPerMinute || 200;
+	const wpm = options?.wordsPerMinute || 180;
 	const requiredType = options?.requiredFrontmatterType || 'Script';
     
 	return ViewPlugin.fromClass(class {
@@ -112,6 +121,7 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 			const text = view.state.doc.toString();
 			const frontmatterMatch = text.match(/^---\n([\s\S]*?)\n---/);
 			
+			let showWords = false;
             // If frontmatter exists, check for required type
 			if (frontmatterMatch) {
 				const frontmatter = frontmatterMatch[1];
@@ -119,6 +129,12 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 				
 				if (!hasRequiredType) {
 					return Decoration.none;
+				}
+				
+				// Check for showWords property
+				const showWordsMatch = frontmatter.match(/showWords:\s*(true|false)/i);
+				if (showWordsMatch && showWordsMatch[1].toLowerCase() === 'true') {
+					showWords = true;
 				}
 			} else {
 				// No frontmatter, don't show decorations
@@ -166,7 +182,7 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 							decorations.push({
 								pos: prevLineEndPos,
 								decoration: Decoration.widget({
-									widget: new ReadingTimeWidget(words, wpm),
+									widget: new ReadingTimeWidget(words, wpm, showWords),
 									side: 1
 								})
 							});
@@ -184,7 +200,7 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 							decorations.push({
 								pos: currentHeadingPos,
 								decoration: Decoration.widget({
-									widget: new SectionReadingTimeWidget(currentSectionWords, wpm),
+									widget: new SectionReadingTimeWidget(currentSectionWords, wpm, showWords),
 									side: 1
 								})
 							});
@@ -213,33 +229,33 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 					decorations.push({
 						pos: docEnd,
 						decoration: Decoration.widget({
-							widget: new ReadingTimeWidget(words, wpm),
-							side: 1
-						})
-					});
-					
-					// Add to section total
-					currentSectionWords += words;
-				}
-			}
-			
-			// Add final section total if there's a heading
-			if (currentHeadingPos >= 0 && currentSectionWords > 0) {
-				decorations.push({
-					pos: currentHeadingPos,
-					decoration: Decoration.widget({
-						widget: new SectionReadingTimeWidget(currentSectionWords, wpm),
+						widget: new ReadingTimeWidget(words, wpm, showWords),
 						side: 1
 					})
 				});
+				
+				// Add to section total
+				currentSectionWords += words;
 			}
-			
-			// Sort decorations by position before creating the set
-			decorations.sort((a, b) => a.pos - b.pos);
-			
-			return Decoration.set(decorations.map(d => d.decoration.range(d.pos)));
 		}
-	}, {
-		decorations: v => v.decorations
-	});
+		
+		// Add final section total if there's a heading
+		if (currentHeadingPos >= 0 && currentSectionWords > 0) {
+			decorations.push({
+				pos: currentHeadingPos,
+				decoration: Decoration.widget({
+					widget: new SectionReadingTimeWidget(currentSectionWords, wpm, showWords),
+					side: 1
+				})
+			});
+		}
+		
+		// Sort decorations by position before creating the set
+		decorations.sort((a, b) => a.pos - b.pos);
+		
+		return Decoration.set(decorations.map(d => d.decoration.range(d.pos)));
+	}
+}, {
+	decorations: v => v.decorations
+});
 }
