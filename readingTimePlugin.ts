@@ -56,11 +56,11 @@ class SectionReadingTimeWidget extends WidgetType {
 		
 		let timeDisplay: string;
 		if (totalSeconds < 60) {
-			timeDisplay = `${totalSeconds} sec at ${this.wordsPerMinute} wpm`;
+			timeDisplay = `${totalSeconds} sec`;
 		} else {
 			const minutes = Math.floor(totalSeconds / 60);
 			const seconds = totalSeconds % 60;
-			timeDisplay = seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min at ${this.wordsPerMinute} wpm`;
+			timeDisplay = seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min`;
 		}
 		
 		if (this.showWords) {
