@@ -56,11 +56,11 @@ class SectionReadingTimeWidget extends WidgetType {
 		
 		let timeDisplay: string;
 		if (totalSeconds < 60) {
-			timeDisplay = `${totalSeconds} sec`;
+			timeDisplay = `${totalSeconds} sec at ${this.wordsPerMinute} wpm`;
 		} else {
 			const minutes = Math.floor(totalSeconds / 60);
 			const seconds = totalSeconds % 60;
-			timeDisplay = seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min`;
+			timeDisplay = seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min at ${this.wordsPerMinute} wpm`;
 		}
 		
 		if (this.showWords) {
@@ -75,11 +75,12 @@ class SectionReadingTimeWidget extends WidgetType {
 
 export interface ReadingTimePluginOptions {
 	wordsPerMinute?: number;
+	getWordsPerMinute?: () => number;
 	requiredFrontmatterType?: string;
 }
 // Main function to create the reading time plugin
 export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
-	const wpm = options?.wordsPerMinute || 180;
+	const getWpm = options?.getWordsPerMinute || (() => options?.wordsPerMinute || 180);
 	const requiredType = options?.requiredFrontmatterType || 'Script';
     
 	return ViewPlugin.fromClass(class {
@@ -117,6 +118,9 @@ export function createReadingTimePlugin(options?: ReadingTimePluginOptions) {
 
         // Build decorations for the entire document
 		buildDecorations(view: EditorView): DecorationSet {
+			// Get current WPM value
+			const wpm = getWpm();
+			
 			// Check if file has required type in frontmatter
 			const text = view.state.doc.toString();
 			const frontmatterMatch = text.match(/^---\n([\s\S]*?)\n---/);

@@ -12,15 +12,11 @@ import { LogModal } from './LogModal';
 
 //An Obsidian plugin providing tools for journalists.
 interface NewsOrganiserSettings {
-	tags: string;
-	type: string;
-	projectDisplayName: string;
+	wpm: number;
 }
 
 const DEFAULT_SETTINGS: NewsOrganiserSettings = {
-	tags: "Event",
-	type: "Event",
-	projectDisplayName: "Story"
+	wpm: 200
 }	
 
 export default class NewsOrganiser extends Plugin {
@@ -28,6 +24,12 @@ export default class NewsOrganiser extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		
+		// Register editor extension with getter function for reactive updates
+		this.registerEditorExtension([createReadingTimePlugin({
+			getWordsPerMinute: () => this.settings.wpm,
+			requiredFrontmatterType: 'Script'
+		})]);
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
@@ -89,13 +91,6 @@ export default class NewsOrganiser extends Plugin {
 
 		/* Views */
 
-
-
-		// Register editor extension to show reading time in edit mode in scripts
-		this.registerEditorExtension([createReadingTimePlugin({
-			wordsPerMinute: 200,
-			requiredFrontmatterType: 'Script'
-		})]);
 	}
 
 	onunload() {
@@ -127,38 +122,24 @@ class EventSettingsTab extends PluginSettingTab {
 		
 		//Setting for default event type - 
 		new Setting(containerEl)
-			.setName('Default type')
-			.setDesc('Add this type to every event created')
+			.setName('Reading Speed')
+			.setDesc('Script reading speed, words per minute')
 			.addText(text => text
-				.setPlaceholder('Type')
-				.setValue(this.plugin.settings.type)
+				.setPlaceholder('words per minute')
+				.setValue(this.plugin.settings.wpm.toString())
 				.onChange(async (value) => {
-					this.plugin.settings.type = value;
-					await this.plugin.saveSettings();
-				}));
-
-		// Setting for project display name
-		new Setting(containerEl)
-			.setName('Display name for projects')
-			.setDesc('Use this name when linking to projects')
-			.addText(text => text
-				.setPlaceholder('Display name')
-				.setValue(this.plugin.settings.projectDisplayName)
-				.onChange(async (value) => {
-					this.plugin.settings.projectDisplayName = value;
-					await this.plugin.saveSettings();
-				}));
-		
-		//Setting for default tags
-		new Setting(containerEl)
-			.setName('Default tags')
-			.setDesc('Add these tags to every event created, separated by spaces')
-			.addText(text => text
-				.setPlaceholder('Tags')
-				.setValue(this.plugin.settings.tags)
-				.onChange(async (value) => {
-					this.plugin.settings.tags = value;
-					await this.plugin.saveSettings();
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue > 0) {
+						this.plugin.settings.wpm = numValue;
+						await this.plugin.saveSettings();
+						// Trigger editor reconfiguration to refresh reading times
+						this.app.workspace.iterateAllLeaves(leaf => {
+							if (leaf.view instanceof MarkdownView && leaf.view.editor) {
+								// @ts-ignore - internal API
+								leaf.view.editor.cm?.dispatch({});
+							}
+						});
+					}
 				}));
 	}
 }
