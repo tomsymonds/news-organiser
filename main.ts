@@ -109,6 +109,32 @@ export default class NewsOrganiser extends Plugin {
 			}
 		})
 
+		this.addCommand({
+			id: 'news-organiser-remove-key-notes',
+			name: 'Remove Key Note Markers',
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice('No active file');
+					return;
+				}
+				
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const selection = view?.editor?.getSelection() || "";
+				
+				const fileAnalyzer = new FileAnalyzer(this.app, this.settings);
+				const result = await fileAnalyzer.removeKeyNoteMarkers(activeFile.path, selection);
+				
+				if (selection && view?.editor) {
+					// Replace the selection with cleaned text
+					view.editor.replaceSelection(result);
+					new Notice('Removed key note markers from selection');
+				} else {
+					new Notice('Removed all key note markers from file');
+				}
+			}
+		})
+
 		// Create an event from selected text, open a modal to edit details, and save to file
 		this.addCommand({
 			id: 'news-organiser-create-event',

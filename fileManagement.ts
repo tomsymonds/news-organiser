@@ -555,4 +555,31 @@ export class FileAnalyzer {
         
         return embedLinks
     }
+
+    // Remove all key note markers from blocks
+    // If selectedText is provided, only process the selection and return modified text
+    // Otherwise, process and save the entire file
+    async removeKeyNoteMarkers(path: string, selectedText: string = ''): Promise<string> {
+        const { fullPath } = this.fileManager['pathParts'](path)
+        const tFile = this.fileManager['getTFile'](fullPath)
+        if(!tFile || !(tFile instanceof TFile)) return ''
+        
+        const marker = this.settings.keyNoteMarker || '~'
+        const escapedMarker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const markerRegex = new RegExp(escapedMarker, 'g')
+        
+        if (selectedText) {
+            // Process only the selection, return modified text
+            return selectedText.replace(markerRegex, '')
+        } else {
+            // Process entire file
+            const content = await this.vault.cachedRead(tFile)
+            if(!content) return ''
+            
+            const cleanedContent = content.replace(markerRegex, '')
+            await this.vault.modify(tFile, cleanedContent)
+            
+            return cleanedContent
+        }
+    }
 }
