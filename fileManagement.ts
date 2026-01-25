@@ -282,6 +282,8 @@ export class FileManager {
     private titleSanitize(titleString: string): string {
         return titleString ? titleString.replace(/\*|_|~|`|#+|\[|\]|\(|\)|>|!|\||-/, "") : titleString
     }
+
+    
         
 }
 
@@ -397,3 +399,160 @@ export class FilePostSaveHandler {
     }
 }
 
+//Analyzes files in the vault
+export class FileAnalyzer {
+    app: App
+    vault: Vault
+    fileManager: FileManager
+    settings: any
+
+    constructor(app: App, settings: any | {}) {
+        this.app = app
+        this.vault = app.vault
+        this.fileManager = new FileManager(app, settings)
+        this.settings = settings
+    }
+
+    // Process a block with marker: remove all markers, add one at the end
+    private processKeyNoteBlock(block: string, marker: string): string {
+        // Check if block already has a block link (ends with ^block-id)
+        const hasBlockLink = /\^[\w-]+\s*$/.test(block.trim())
+        
+        // Remove existing block ID if present for processing
+        let blockWithoutId = block
+        if (hasBlockLink) {
+            blockWithoutId = block.replace(/\s*\^[\w-]+\s*$/, '')
+        }
+        
+        // Remove all marker characters from the block
+        const cleanBlock = blockWithoutId.replace(new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '')
+        
+        // Add marker at the end
+        return `${cleanBlock.trim()} ${marker}`
+    }
+
+    // Get all blocks of text from a file that contain the key note marker character
+    // A block is a continuous range of text delimited by at least two line ends (blank line)
+    // If selectedText is provided, only return blocks found in the selection
+    // Also modifies the file to normalize marker placement
+    async getKeyNotes(path: string, selectedText: string = ''): Promise<string[]> {
+        const { fullPath } = this.fileManager['pathParts'](path)
+        const tFile = this.fileManager['getTFile'](fullPath)
+        if(!tFile || !(tFile instanceof TFile)) return []
+        
+        const content = await this.vault.cachedRead(tFile)
+        if(!content) return []
+        
+        const marker = this.settings.keyNoteMarker || '~'
+        
+        // Determine which blocks to return
+        const selectedBlocks: Set<string> = new Set()
+        if (selectedText) {
+            const selectionBlocks = selectedText.split(/\n\s*\n/)
+            selectionBlocks.forEach(block => {
+                if (block.includes(marker)) {
+                    selectedBlocks.add(block.trim())
+                }
+            })
+        }
+        
+        // Process all blocks in the file
+        const blocks = content.split(/\n\s*\n/)
+        const keyNotes: string[] = []
+        const modifiedBlocks: string[] = []
+        
+        blocks.forEach(block => {
+            if (block.includes(marker)) {
+                const shouldInclude = !selectedText || selectedBlocks.has(block.trim())
+                const processedBlock = this.processKeyNoteBlock(block, marker)
+                modifiedBlocks.push(processedBlock)
+                if (shouldInclude) {
+                    keyNotes.push(processedBlock)
+                }
+            } else {
+                modifiedBlocks.push(block)
+            }
+        })
+        
+        // Save the modified content back to the file
+        const newContent = modifiedBlocks.join('\n\n')
+        await this.vault.modify(tFile, newContent)
+        
+        return keyNotes
+    }
+
+    // Get key notes, add block links to each in the file, and return array of block embed links
+    // If selectedText is provided, only return embed links for blocks found in the selection
+    async getKeyNotesWithBlockLinks(path: string, selectedText: string = ''): Promise<string[]> {
+        const { fullPath } = this.fileManager['pathParts'](path)
+        const tFile = this.fileManager['getTFile'](fullPath)
+        if(!tFile || !(tFile instanceof TFile)) return []
+        
+        let content = await this.vault.cachedRead(tFile)
+        if(!content) return []
+        
+        const marker = this.settings.keyNoteMarker || '~'
+        
+        // Determine which blocks to track for embed links
+        const selectedBlocks: Set<string> = new Set()
+        if (selectedText) {
+            const selectionBlocks = selectedText.split(/\n\s*\n/)
+            selectionBlocks.forEach(block => {
+                if (block.includes(marker)) {
+                    selectedBlocks.add(block.trim())
+                }
+            })
+        }
+        
+        const blocks = content.split(/\n\s*\n/)
+        const embedLinks: string[] = []
+        const modifiedBlocks: string[] = []
+        
+        blocks.forEach((block, index) => {
+            if (block.includes(marker)) {
+                // Check if this block should be included in results
+                const shouldInclude = !selectedText || selectedBlocks.has(block.trim())
+                
+                // Check if block already has a block link (ends with ^block-id)
+                const hasBlockLink = /\^[\w-]+\s*$/.test(block.trim())
+                
+                // Extract existing block ID if present
+                let existingBlockId = ''
+                if (hasBlockLink) {
+                    const match = block.trim().match(/\^([\w-]+)\s*$/)
+                    if (match) {
+                        existingBlockId = match[1]
+                    }
+                }
+                
+                // Process the block (remove markers, add at end)
+                const processedBlock = this.processKeyNoteBlock(block, marker)
+                
+                if (!hasBlockLink) {
+                    // Generate a block ID using Obsidian's format (6-character alphanumeric)
+                    const blockId = Math.random().toString(36).substring(2, 8)
+                    // Add block link to the end of the processed block
+                    modifiedBlocks.push(`${processedBlock} ^${blockId}`)
+                    // Create embed link for this block only if it should be included
+                    if (shouldInclude) {
+                        embedLinks.push(`![[${tFile.basename}#^${blockId}|source]]\n`)
+                    }
+                } else {
+                    // Use existing block ID
+                    modifiedBlocks.push(`${processedBlock} ^${existingBlockId}`)
+                    if (shouldInclude) {
+                        embedLinks.push(`![[${tFile.basename}#^${existingBlockId}|source]]\n`)
+                    }
+                }
+            } else {
+                modifiedBlocks.push(block)
+            }
+        })
+        
+        // Rejoin blocks with blank lines and save
+        const newContent = modifiedBlocks.join('\n\n')
+        await this.vault.modify(tFile, newContent)
+        
+        return embedLinks
+    }
+}

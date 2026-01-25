@@ -1,7 +1,7 @@
 import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, editorLivePreviewField } from 'obsidian';
 import Event from './Event'
 import EventModal from './EventModal';
-import { FileWrangler, FileManager } from './fileManagement';
+import { FileWrangler, FileManager, FileAnalyzer } from './fileManagement';
 import { NoteModal } from './NoteModal'; 
 import { PersonModal } from './PersonModal';
 import DurationCounter from './DurationCounter';
@@ -13,10 +13,12 @@ import { LogModal } from './LogModal';
 //An Obsidian plugin providing tools for journalists.
 interface NewsOrganiserSettings {
 	wpm: number;
+	keyNoteMarker: string;
 }
 
 const DEFAULT_SETTINGS: NewsOrganiserSettings = {
-	wpm: 200
+	wpm: 200,
+	keyNoteMarker: '~'
 }	
 
 export default class NewsOrganiser extends Plugin {
@@ -54,6 +56,58 @@ export default class NewsOrganiser extends Plugin {
 				new PersonModal(this.app, text, this.settings).open()
 			}
  		});
+		
+		this.addCommand({
+			id: 'news-organiser-get-key-notes',
+			name: 'Get Key Notes',
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice('No active file');
+					return;
+				}
+				
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const selection = view?.editor?.getSelection() || "";
+				
+				const fileAnalyzer = new FileAnalyzer(this.app, this.settings);
+				const keyNotes = await fileAnalyzer.getKeyNotes(activeFile.path, selection);
+				if (keyNotes.length === 0) {
+					new Notice('No key notes found.');
+					return;
+				}
+				// Copy key note text to clipboard
+				const notesText = keyNotes.join('\n\n');
+				navigator.clipboard.writeText(notesText);
+				new Notice(`Found ${keyNotes.length} key note${keyNotes.length === 1 ? '' : 's'} (copied to clipboard)`);
+			}
+		})
+
+		this.addCommand({
+			id: 'news-organiser-get-key-notes-as-embeds',
+			name: 'Get Key Notes as Embeds',
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice('No active file');
+					return;
+				}
+				
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const selection = view?.editor?.getSelection() || "";
+				
+				const fileAnalyzer = new FileAnalyzer(this.app, this.settings);
+				const embedLinks = await fileAnalyzer.getKeyNotesWithBlockLinks(activeFile.path, selection);
+				if (embedLinks.length === 0) {
+					new Notice('No key notes found.');
+					return;
+				}
+				// Copy links to clipboard
+				const linksText = embedLinks.join('\n');
+				navigator.clipboard.writeText(linksText);
+				new Notice(`Found ${embedLinks.length} key note${embedLinks.length === 1 ? '' : 's'} (copied to clipboard)`);
+			}
+		})
 
 		// Create an event from selected text, open a modal to edit details, and save to file
 		this.addCommand({
@@ -139,6 +193,19 @@ class EventSettingsTab extends PluginSettingTab {
 								leaf.view.editor.cm?.dispatch({});
 							}
 						});
+					}
+				}));
+
+		new Setting(containerEl)
+			.setName('Key Note Marker')
+			.setDesc('Character used to mark key notes in your documents')
+			.addText(text => text
+				.setPlaceholder('~')
+				.setValue(this.plugin.settings.keyNoteMarker)
+				.onChange(async (value) => {
+					if (value.length > 0) {
+						this.plugin.settings.keyNoteMarker = value.charAt(0);
+						await this.plugin.saveSettings();
 					}
 				}));
 	}

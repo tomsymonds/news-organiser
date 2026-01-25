@@ -18,3 +18,8 @@ textarea {
     margin-left: 10px;
     padding-top: -10px
 }
+
+/* Hide block IDs in reading view only */
+.markdown-rendered a[data-block-ref] {
+    display: none;
+}
