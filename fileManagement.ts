@@ -30,7 +30,6 @@ export class FileManager {
     //Save a file creating if it doesn't exist and updating if it does.
     //Run PostSaveHandler after saving
     saveFile(options: any): any {
-        console.log("FileManager: SaveFile", options)
         if(!options.postSaveHandler) {
             throw new Error("FileManager: SaveFile: No PostSaveHandler provided")
         }
@@ -65,7 +64,7 @@ export class FileManager {
         this.vault.create(savePath, "").then((tFile) => {
             newFile.tFile = tFile
             const parentMetadataKeys = newFile.constructor.parentMetadataKeys
-            if(parentMetadataKeys && Object.keys(parentMetadataKeys.length > 0)){
+            if(parentMetadataKeys && Object.keys(parentMetadataKeys).length > 0){
                 const parentMetadata = this.getActiveFileMetadata()
                 if(parentMetadata){
                     this.addMatchingKeys(parentMetadata, parentMetadataKeys, newFile.metadata)
@@ -260,7 +259,6 @@ export class FileManager {
         parts.forEach((part, index) => {
            parts[index] = part.replace(/[\/\\:*?"<>|]/g, "").trim()
         })
-        console.log(parts)
         const nameWithExt = parts.pop() || ""
         const folder = parts.join("/")
         const name = nameWithExt.endsWith(".md") ? nameWithExt.slice(0, -3) : nameWithExt
@@ -324,7 +322,7 @@ export class FileWrangler {
                     }
                         
                 }  
-                await this.fileManager.saveFile({path: file.tFile.path, noteObj:file, onSave})
+                await this.fileManager.saveFile({path: file.tFile.path, noteObj:file, postSaveHandler: onSave})
             })
         }   
         return {updatedResult, saved, notSaved}
@@ -444,7 +442,17 @@ export class FileAnalyzer {
         if(!content) return []
         
         const marker = this.settings.keyNoteMarker || '~'
+        const includeHeadings = this.settings.includeHeadings || false
         
+        // Preserve YAML frontmatter (if present) so headings directly after it are parsed correctly
+        let frontmatter = ''
+        let body = content
+        const fmMatch = content.match(/^---\n[\s\S]*?\n---\n?/)
+        if (fmMatch) {
+            frontmatter = fmMatch[0]
+            body = content.slice(frontmatter.length)
+        }
+
         // Determine which blocks to return
         const selectedBlocks: Set<string> = new Set()
         if (selectedText) {
@@ -456,29 +464,58 @@ export class FileAnalyzer {
             })
         }
         
-        // Process all blocks in the file
-        const blocks = content.split(/\n\s*\n/)
-        const keyNotes: string[] = []
+        // Process all blocks in the file body (excluding frontmatter) in order
+        const blocks = body.split(/\n\s*\n/)
+        const results: string[] = []
         const modifiedBlocks: string[] = []
         
         blocks.forEach(block => {
-            if (block.includes(marker)) {
+            // Check if this block is a heading (may be followed directly by content)
+            const isHeading = block.trim().match(/^#{1,6}\s+/)
+
+            if (isHeading && includeHeadings) {
+                // Split heading and remainder if they are in the same block
+                const lines = block.split('\n')
+                const headingLine = (lines.shift() || '').trim()
+                const remainder = lines.join('\n').trim()
+
+                // Include the heading as its own result item when appropriate
+                const shouldIncludeHeading = !selectedText || selectedText.includes(headingLine)
+                if (shouldIncludeHeading) {
+                    results.push(headingLine)
+                }
+                modifiedBlocks.push(headingLine)
+
+                // If there is remainder text after the heading, process it separately
+                if (remainder) {
+                    if (remainder.includes(marker)) {
+                        const shouldInclude = !selectedText || selectedBlocks.has(block.trim()) || selectedBlocks.has(remainder.trim())
+                        const processedBlock = this.processKeyNoteBlock(remainder, marker)
+                        modifiedBlocks.push(processedBlock)
+                        if (shouldInclude) {
+                            results.push(processedBlock)
+                        }
+                    } else {
+                        modifiedBlocks.push(remainder)
+                    }
+                }
+            } else if (block.includes(marker)) {
                 const shouldInclude = !selectedText || selectedBlocks.has(block.trim())
                 const processedBlock = this.processKeyNoteBlock(block, marker)
                 modifiedBlocks.push(processedBlock)
                 if (shouldInclude) {
-                    keyNotes.push(processedBlock)
+                    results.push(processedBlock)
                 }
             } else {
                 modifiedBlocks.push(block)
             }
         })
         
-        // Save the modified content back to the file
-        const newContent = modifiedBlocks.join('\n\n')
+        // Save the modified content back to the file (preserve frontmatter)
+        const newContent = frontmatter + modifiedBlocks.join('\n\n')
         await this.vault.modify(tFile, newContent)
         
-        return keyNotes
+        return results
     }
 
     // Get key notes, add block links to each in the file, and return array of block embed links
@@ -492,7 +529,17 @@ export class FileAnalyzer {
         if(!content) return []
         
         const marker = this.settings.keyNoteMarker || '~'
+        const includeHeadings = this.settings.includeHeadings || false
         
+        // Preserve YAML frontmatter (if present) so headings directly after it are parsed correctly
+        let frontmatter = ''
+        let body = content
+        const fmMatch = content.match(/^---\n[\s\S]*?\n---\n?/)
+        if (fmMatch) {
+            frontmatter = fmMatch[0]
+            body = content.slice(frontmatter.length)
+        }
+
         // Determine which blocks to track for embed links
         const selectedBlocks: Set<string> = new Set()
         if (selectedText) {
@@ -504,18 +551,57 @@ export class FileAnalyzer {
             })
         }
         
-        const blocks = content.split(/\n\s*\n/)
-        const embedLinks: string[] = []
+        const blocks = body.split(/\n\s*\n/)
+        const results: string[] = []
         const modifiedBlocks: string[] = []
         
         blocks.forEach((block, index) => {
-            if (block.includes(marker)) {
+            // Check if this block is a heading (may be followed directly by content)
+            const isHeading = block.trim().match(/^#{1,6}\s+/)
+
+            if (isHeading && includeHeadings) {
+                // Split heading and remainder if they are in the same block
+                const lines = block.split('\n')
+                const headingLine = (lines.shift() || '').trim()
+                const remainder = lines.join('\n').trim()
+
+                const shouldIncludeHeading = !selectedText || selectedText.includes(headingLine)
+                if (shouldIncludeHeading) {
+                    results.push(headingLine)
+                }
+                modifiedBlocks.push(headingLine)
+
+                if (remainder) {
+                    // Handle remainder similar to other blocks (may contain marker)
+                    const hasBlockLink = /\^[\w-]+\s*$/.test(remainder.trim())
+                    let existingBlockId = ''
+                    if (hasBlockLink) {
+                        const match = remainder.trim().match(/\^([\w-]+)\s*$/)
+                        if (match) existingBlockId = match[1]
+                    }
+
+                    if (remainder.includes(marker)) {
+                        const shouldInclude = !selectedText || selectedBlocks.has(block.trim()) || selectedBlocks.has(remainder.trim())
+                        const processedBlock = this.processKeyNoteBlock(remainder, marker)
+                        if (!hasBlockLink) {
+                            const blockId = Math.random().toString(36).substring(2, 8)
+                            modifiedBlocks.push(`${processedBlock} ^${blockId}`)
+                            if (shouldInclude) results.push(`![[${tFile.basename}#^${blockId}|source]]\n`)
+                        } else {
+                            modifiedBlocks.push(`${processedBlock} ^${existingBlockId}`)
+                            if (shouldInclude) results.push(`![[${tFile.basename}#^${existingBlockId}|source]]\n`)
+                        }
+                    } else {
+                        modifiedBlocks.push(remainder)
+                    }
+                }
+            } else if (block.includes(marker)) {
                 // Check if this block should be included in results
                 const shouldInclude = !selectedText || selectedBlocks.has(block.trim())
-                
+
                 // Check if block already has a block link (ends with ^block-id)
                 const hasBlockLink = /\^[\w-]+\s*$/.test(block.trim())
-                
+
                 // Extract existing block ID if present
                 let existingBlockId = ''
                 if (hasBlockLink) {
@@ -524,10 +610,10 @@ export class FileAnalyzer {
                         existingBlockId = match[1]
                     }
                 }
-                
+
                 // Process the block (remove markers, add at end)
                 const processedBlock = this.processKeyNoteBlock(block, marker)
-                
+
                 if (!hasBlockLink) {
                     // Generate a block ID using Obsidian's format (6-character alphanumeric)
                     const blockId = Math.random().toString(36).substring(2, 8)
@@ -535,13 +621,13 @@ export class FileAnalyzer {
                     modifiedBlocks.push(`${processedBlock} ^${blockId}`)
                     // Create embed link for this block only if it should be included
                     if (shouldInclude) {
-                        embedLinks.push(`![[${tFile.basename}#^${blockId}|source]]\n`)
+                        results.push(`![[${tFile.basename}#^${blockId}|source]]\n`)
                     }
                 } else {
                     // Use existing block ID
                     modifiedBlocks.push(`${processedBlock} ^${existingBlockId}`)
                     if (shouldInclude) {
-                        embedLinks.push(`![[${tFile.basename}#^${existingBlockId}|source]]\n`)
+                        results.push(`![[${tFile.basename}#^${existingBlockId}|source]]\n`)
                     }
                 }
             } else {
@@ -549,11 +635,11 @@ export class FileAnalyzer {
             }
         })
         
-        // Rejoin blocks with blank lines and save
-        const newContent = modifiedBlocks.join('\n\n')
+        // Rejoin blocks with blank lines and save (preserve frontmatter)
+        const newContent = frontmatter + modifiedBlocks.join('\n\n')
         await this.vault.modify(tFile, newContent)
         
-        return embedLinks
+        return results
     }
 
     // Remove all key note markers from blocks

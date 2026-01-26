@@ -14,11 +14,13 @@ import { LogModal } from './LogModal';
 interface NewsOrganiserSettings {
 	wpm: number;
 	keyNoteMarker: string;
+	includeHeadings: boolean;
 }
 
 const DEFAULT_SETTINGS: NewsOrganiserSettings = {
 	wpm: 200,
-	keyNoteMarker: '~'
+	keyNoteMarker: '~',
+	includeHeadings: false
 }	
 
 export default class NewsOrganiser extends Plugin {
@@ -233,6 +235,16 @@ class EventSettingsTab extends PluginSettingTab {
 						this.plugin.settings.keyNoteMarker = value.charAt(0);
 						await this.plugin.saveSettings();
 					}
+				}));
+
+		new Setting(containerEl)
+			.setName('Include Headings')
+			.setDesc('Include all headings in key note blocks')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.includeHeadings)
+				.onChange(async (value) => {
+					this.plugin.settings.includeHeadings = value;
+					await this.plugin.saveSettings();
 				}));
 	}
 }
