@@ -18,11 +18,11 @@ import { BaseNote } from "./BaseNote";
  * Modal to create a new note
  */
 export class LogModal extends NewsModal {
-    private note: Note | null
+    private note: Note | null = null
     private insertIntoCurrent = false;
     private components: string[] = []
     private type: string
-    private storySelector: StorySelector
+    private storySelector!: StorySelector
     private currentStory: BaseNote | undefined
     private logText: string | ""
 
@@ -98,7 +98,8 @@ export class LogModal extends NewsModal {
         if(!this.note) return
         //Append the log entry to the note content
         const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        this.note.contents += `**${dateStr}**\n${this.logText}\n\n`
+        const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+        this.note.contents += `**${dateStr} ${timeStr}**\n${this.logText}\n\n`
         const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
         this.fileManager.saveFile({path: `Notes/${this.note.title}.md`, noteObj: this.note, postSaveHandler: postSaveHandler})
      }

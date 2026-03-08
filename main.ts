@@ -24,7 +24,7 @@ const DEFAULT_SETTINGS: NewsOrganiserSettings = {
 }	
 
 export default class NewsOrganiser extends Plugin {
-	settings: NewsOrganiserSettings
+	settings!: NewsOrganiserSettings
 
 	async onload() {
 		await this.loadSettings();
