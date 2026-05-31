@@ -98,7 +98,6 @@ export class NoteModal extends NewsModal {
 					.setCta()
 					.onClick(() => {
 						this.createNote()
-						navigator.clipboard.writeText(`[[${this.note.metadata.title}]]`);
 						this.close();
 					})
 			);
@@ -107,8 +106,16 @@ export class NoteModal extends NewsModal {
 	//Create the note file based on the metadata entered
 	 private async createNote() {
 		this.close();
-		const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
-		this.fileManager.saveFile({path: `Notes/${this.note.title}.md`, noteObj: this.note, postSaveHandler: postSaveHandler})
+		const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: false, doNotify: true}, );
+		const openOnSaveHandler = {
+			do: (result: any) => {
+				postSaveHandler.do(result);
+				if (result.status === "ok" && result.file?.tFile) {
+					this.modalUtils.openNote(result.file.tFile);
+				}
+			}
+		};
+		this.fileManager.saveFile({path: `Notes/${this.note.title}.md`, noteObj: this.note, postSaveHandler: openOnSaveHandler})
 	}
 
 
