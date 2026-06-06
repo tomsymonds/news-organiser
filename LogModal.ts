@@ -5,7 +5,6 @@ import {
 } from "obsidian";
 
 import StorySelector from "./StorySelector";
-import CategorySelector from "./CategorySelector";
 import { FilePostSaveHandler } from "./fileManagement";
 import Note from "./Note";
 import NewsModal from "./NewsModal";
@@ -17,19 +16,15 @@ import { BaseNote } from "./BaseNote";
  */
 export class LogModal extends NewsModal {
     private note: Note | null = null
-    private insertIntoCurrent = false;
-    private components: string[] = []
-    private type: string
     private storySelector!: StorySelector
     private currentStoryLink: string | null = null
+    private logFileStoryLink: string | null = null
     private currentSourceNoteLink: string | null = null
     private logText: string | ""
 
 
     constructor(app: App, selectedText: string | null, settings: any = {}) {
         super(app, settings);
-        //this.components = components;
-        this.type = "Note"
         this.logText = selectedText || ""
         this.currentSourceNoteLink = this.getCurrentSourceNoteLinkForLog()
         this.currentStoryLink = this.getCurrentStoryLinkForLog()
@@ -37,18 +32,13 @@ export class LogModal extends NewsModal {
     }
 
     onOpen() {
-        if(!this.note) {
-            new Notice("Error: Could not create or find log note for current story. Open a story or a note with at least one story.")
-            this.close();
-            return
-        }   
         const { contentEl } = this;
         contentEl.empty();
         contentEl.createEl("h2", { text: `Add Log Entry` });
 
         /* ---------------- Title ---------------- */
         new Setting(contentEl)
-            .setName('Title')
+            .setName('Log Content')
             .addTextArea((text) => {
                 text
                     .setValue(this.logText)
@@ -57,14 +47,11 @@ export class LogModal extends NewsModal {
                     });
                 })
 
-
-        
-
-
-        /* ---------------- Stories ---------------- 
+        /* ---------------- Stories ---------------- */
         const onStoriesChange = () => { 
-            this.note.metadata.stories = this.storySelector?.getSelectedStories() || []
-            return this.note.metadata.stories;
+            const selectedStories = this.storySelector?.getSelectedStories() || []
+            this.currentStoryLink = selectedStories[0] || null
+            return this.currentStoryLink || "";
         }
 
         this.storySelector = new StorySelector(this.app, onStoriesChange, true)
@@ -74,19 +61,19 @@ export class LogModal extends NewsModal {
         const stories = this.fileManager.getCurrentFileStories()
         if(stories && stories.length > 0){   
             this.storySelector?.addStories(stories)
-            this.note.metadata.stories = this.storySelector?.getSelectedStories() || []
+            this.currentStoryLink = this.storySelector?.getSelectedStories()?.[0] || this.currentStoryLink
+        } else if (this.currentStoryLink) {
+            this.storySelector?.addStories([this.currentStoryLink])
         }
-        */
 
         /* ---------------- Create Button ---------------- */
         new Setting(contentEl)
             .addButton((btn) =>
                 btn
-                    .setButtonText("Create Note")
+                    .setButtonText("Add Log Entry")
                     .setCta()
                     .onClick(() => {
                         this.createNote()
-                        navigator.clipboard.writeText(`[[${this.logText}]]`);
                         this.close();
                     })
             );
@@ -94,11 +81,22 @@ export class LogModal extends NewsModal {
 
     //Create the note file based on the metadata entered
       private async createNote() {
-        this.close();
-        if(!this.note) return
-                if (this.currentStoryLink) {
-                        this.note.metadata.story = this.currentStoryLink
-                }
+        if (!this.currentStoryLink) {
+            new Notice("Select a story before adding a log entry.")
+            return
+        }
+
+        if (this.logFileStoryLink !== this.currentStoryLink) {
+            this.note = null
+        }
+        this.setLogFile();
+        if(!this.note) {
+            new Notice("Error: Could not create or find log note for selected story.")
+            return
+        }
+
+        this.note.metadata.story = this.currentStoryLink
+
         //Append the log entry to the note content
         const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -106,6 +104,7 @@ export class LogModal extends NewsModal {
         this.note.contents += `**${dateStr} ${timeStr}**\n${this.logText}${sourceNoteSuffix}\n\n`
         const postSaveHandler = new FilePostSaveHandler(this.app, this.settings, {doClipboard: true, doNotify: true}, );
         this.fileManager.saveFile({path: `Notes/${this.note.title}.md`, noteObj: this.note, postSaveHandler: postSaveHandler})
+        navigator.clipboard.writeText(`[[${this.logText}]]`);
      }
 
 
@@ -126,6 +125,7 @@ export class LogModal extends NewsModal {
         if(result.status === "ok"){
             this.note = result.file as Note
             this.note.metadata.story = this.currentStoryLink
+            this.logFileStoryLink = this.currentStoryLink
         } else {
             const defaultLogMetadata = {
                 title: logFileName,
@@ -133,6 +133,7 @@ export class LogModal extends NewsModal {
                 story: this.currentStoryLink
             }
             this.note = new Note(null, defaultLogMetadata, {})
+            this.logFileStoryLink = this.currentStoryLink
             this.fileManager.saveFile({noteObj: this.note, postSaveHandler: new FilePostSaveHandler(this.app, this.settings, {doClipboard: false, doNotify: true}), path: `Notes/${logFileName}.md`})
         }
     }

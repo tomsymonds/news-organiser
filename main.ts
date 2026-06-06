@@ -51,6 +51,19 @@ export default class NewsOrganiser extends Plugin {
  		});
 
 		this.addCommand({
+			id: 'news-organiser-create-note-from-paste',
+			name: 'Create Note from Paste',
+			callback: async () => {
+				try {
+					const text = await navigator.clipboard.readText();
+					new NoteModal(this.app, text || "", this.settings).open()
+				} catch (error) {
+					new Notice('Could not read clipboard. Copy text and try again.');
+				}
+			}
+		});
+
+		this.addCommand({
  			id: "news-organiser-create-person",
  			name: "Create Person",
 			callback: () => {
@@ -204,6 +217,19 @@ export default class NewsOrganiser extends Plugin {
 				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 				const text = view?.editor?.getSelection() || "";
 				new LogModal(this.app, text, this.settings).open()
+			}
+		});
+
+		this.addCommand({
+			id: 'news-organiser-create-log-entry-from-paste',
+			name: 'Add Log Entry from Paste',
+			callback: async () => {
+				try {
+					const text = await navigator.clipboard.readText();
+					new LogModal(this.app, text || "", this.settings).open()
+				} catch (error) {
+					new Notice('Could not read clipboard. Copy text and try again.');
+				}
 			}
 		});
 
