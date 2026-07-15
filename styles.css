@@ -23,3 +23,53 @@ textarea {
 .markdown-rendered a[data-block-ref] {
     display: none;
 }
+
+.news-organiser-reliability-options {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.news-organiser-reliability-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0;
+}
+
+.news-organiser-reliability-option input[type="radio"] {
+    margin: 0;
+}
+
+.news-organiser-link-suggestions {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    margin: -6px 0 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--background-primary);
+}
+
+.news-organiser-link-suggestion-item {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--background-modifier-border-hover);
+    cursor: pointer;
+}
+
+.news-organiser-link-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.news-organiser-link-suggestion-item:hover {
+    background: var(--background-modifier-hover);
+}
+
+.news-organiser-link-suggestion-title {
+    font-weight: 600;
+}
+
+.news-organiser-link-suggestion-path {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}

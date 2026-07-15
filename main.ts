@@ -8,6 +8,7 @@ import DurationCounter from './DurationCounter';
 import { createReadingTimePlugin } from './readingTimePlugin';
 import { LogModal } from './LogModal';
 import Note from './Note';
+import { SourceModal, SourceModalResult } from './SourceModal';
 
 
 
@@ -233,6 +234,36 @@ export default class NewsOrganiser extends Plugin {
 			}
 		});
 
+		this.addCommand({
+			id: 'news-organiser-add-source',
+			name: 'Add Source',
+			callback: async () => {
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (!view?.editor) {
+					new Notice('Open a markdown note and place the cursor where you want to add a source.');
+					return;
+				}
+
+				let clipboardText = '';
+				try {
+					clipboardText = (await navigator.clipboard.readText())?.trim() || '';
+				} catch (error) {
+					// Ignore clipboard failures and open with an empty source link.
+				}
+
+				new SourceModal(this.app, clipboardText, (result: SourceModalResult) => {
+					const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+					if (!activeView?.editor) {
+						new Notice('No active markdown editor found to insert the source.');
+						return;
+					}
+
+					const sourceMarkup = this.buildSourceMarkup(result);
+					activeView.editor.replaceSelection(`${sourceMarkup}\n`);
+				}).open();
+			}
+		});
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new EventSettingsTab(this.app, this));
 
@@ -311,6 +342,60 @@ export default class NewsOrganiser extends Plugin {
 		if (!trimmed) return null;
 		if (trimmed.startsWith('[[') && trimmed.endsWith(']]')) return trimmed;
 		return `[[${trimmed}]]`;
+	}
+
+	private buildSourceMarkup(source: SourceModalResult): string {
+		const description = source.sourceDescription.trim();
+		const link = source.sourceLink.trim();
+		const sourceText = this.buildSourceText(link, description);
+		const reliabilityTag = this.buildReliabilityTag(source.reliability);
+		return `source: ${sourceText} ${reliabilityTag}`;
+	}
+
+	private buildReliabilityTag(reliability: SourceModalResult['reliability']): string {
+		const labelMap: Record<SourceModalResult['reliability'], string> = {
+			confirmed: 'Confirmed',
+			reported: 'Reported',
+			unconfirmed: 'Unconfirmed',
+		};
+
+		return `#${labelMap[reliability]}`;
+	}
+
+	private buildSourceText(link: string, description: string): string {
+		if (!link) {
+			return description;
+		}
+
+		if (this.isWikiLink(link)) {
+			return this.formatWikiLink(link, description);
+		}
+
+		if (description) {
+			return `[${description}](${link})`;
+		}
+
+		return link;
+	}
+
+	private isWikiLink(link: string): boolean {
+		const trimmed = link.trim();
+		return trimmed.startsWith('[[') && trimmed.endsWith(']]');
+	}
+
+	private formatWikiLink(wikiLink: string, description: string): string {
+		if (!description) {
+			return wikiLink;
+		}
+
+		const inner = wikiLink.slice(2, -2);
+		const [target] = inner.split('|');
+		const cleanTarget = target.trim();
+		if (!cleanTarget) {
+			return description;
+		}
+
+		return `[[${cleanTarget}|${description}]]`;
 	}
 
 }
