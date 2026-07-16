@@ -349,7 +349,7 @@ export default class NewsOrganiser extends Plugin {
 		const link = source.sourceLink.trim();
 		const sourceText = this.buildSourceText(link, description);
 		const reliabilityTag = this.buildReliabilityTag(source.reliability);
-		return `source: ${sourceText} ${reliabilityTag}`;
+		return `👁️‍🗨️ ${sourceText} ${reliabilityTag}`;
 	}
 
 	private buildReliabilityTag(reliability: SourceModalResult['reliability']): string {

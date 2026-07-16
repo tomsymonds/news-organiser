@@ -20,8 +20,20 @@ export class SourceModal extends NewsModal {
 
     constructor(app: App, sourceLinkPrefill: string, onSubmit: (result: SourceModalResult) => void, settings: any = {}) {
         super(app, settings);
-        this.sourceLink = sourceLinkPrefill || '';
+        this.sourceLink = this.sanitizeSourceLinkPrefill(sourceLinkPrefill || '');
         this.onSubmit = onSubmit;
+    }
+
+    private sanitizeSourceLinkPrefill(value: string): string {
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return '';
+        }
+
+        return trimmed
+            .replace(/^👁️‍🗨️\s*/, '')
+            .replace(/^source:\s*/i, '')
+            .trim();
     }
 
     onOpen() {
