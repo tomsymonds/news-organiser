@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, editorLivePreviewField } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, editorLivePreviewField } from 'obsidian';
 import Event from './Event'
 import EventModal from './EventModal';
 import { FileWrangler, FileManager, FileAnalyzer, FilePostSaveHandler } from './fileManagement';
@@ -148,6 +148,44 @@ export default class NewsOrganiser extends Plugin {
 		})
 
 		this.addCommand({
+			id: 'news-organiser-get-key-notes-with-source',
+			name: 'Get Key Notes With Source',
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice('No active file');
+					return;
+				}
+
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const selection = view?.editor?.getSelection() || "";
+
+				const fileAnalyzer = new FileAnalyzer(this.app, this.settings);
+				const keyNotes = await fileAnalyzer.getKeyNotes(activeFile.path, selection);
+				if (keyNotes.length === 0) {
+					new Notice('No key notes found.');
+					return;
+				}
+
+				const sourceLink = this.toWikiLinkForFile(activeFile);
+				new SourceModal(this.app, sourceLink, async (result: SourceModalResult) => {
+					const notesText = keyNotes.join('\n\n');
+					const sourceMarkup = this.buildSourceMarkup(result);
+					const output = `${notesText}\n\n${sourceMarkup}`;
+
+					try {
+						await navigator.clipboard.writeText(output);
+						new Notice(`Found ${keyNotes.length} key note${keyNotes.length === 1 ? '' : 's'} and copied with source to clipboard`);
+					} catch (error) {
+						new Notice('Could not copy key notes with source to clipboard.');
+					}
+				}, {
+					sourceDescriptionPrefill: activeFile.basename,
+				}).open();
+			}
+		})
+
+		this.addCommand({
 			id: 'news-organiser-get-key-notes-as-embeds',
 			name: 'Get Key Notes as Embeds',
 			callback: async () => {
@@ -251,15 +289,31 @@ export default class NewsOrganiser extends Plugin {
 					// Ignore clipboard failures and open with an empty source link.
 				}
 
-				new SourceModal(this.app, clipboardText, (result: SourceModalResult) => {
-					const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-					if (!activeView?.editor) {
-						new Notice('No active markdown editor found to insert the source.');
-						return;
-					}
+				this.openSourceModalWithPrefill(clipboardText);
+			}
+		});
 
+		this.addCommand({
+			id: 'news-organiser-get-source-for-current-note',
+			name: 'Get Source for Current Note',
+			callback: () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice('No active note found.');
+					return;
+				}
+
+				const sourceLink = this.toWikiLinkForFile(activeFile);
+				new SourceModal(this.app, sourceLink, async (result: SourceModalResult) => {
 					const sourceMarkup = this.buildSourceMarkup(result);
-					activeView.editor.replaceSelection(`${sourceMarkup}\n`);
+					try {
+						await navigator.clipboard.writeText(sourceMarkup);
+						new Notice('Source link copied to clipboard.');
+					} catch (error) {
+						new Notice('Could not copy source link to clipboard.');
+					}
+				}, {
+					sourceDescriptionPrefill: activeFile.basename,
 				}).open();
 			}
 		});
@@ -342,6 +396,35 @@ export default class NewsOrganiser extends Plugin {
 		if (!trimmed) return null;
 		if (trimmed.startsWith('[[') && trimmed.endsWith(']]')) return trimmed;
 		return `[[${trimmed}]]`;
+	}
+
+	private toWikiLinkForFile(file: TFile): string {
+		const duplicateCount = this.app.vault
+			.getMarkdownFiles()
+			.filter((candidate) => candidate.basename === file.basename)
+			.length;
+
+		if (duplicateCount > 1) {
+			const pathWithoutExtension = file.path.replace(/\.md$/i, '');
+			return `[[${pathWithoutExtension}]]`;
+		}
+
+		return `[[${file.basename}]]`;
+	}
+
+	private openSourceModalWithPrefill(sourceLinkPrefill: string, sourceDescriptionPrefill = ''): void {
+		new SourceModal(this.app, sourceLinkPrefill, (result: SourceModalResult) => {
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!activeView?.editor) {
+				new Notice('No active markdown editor found to insert the source.');
+				return;
+			}
+
+			const sourceMarkup = this.buildSourceMarkup(result);
+			activeView.editor.replaceSelection(`${sourceMarkup}\n`);
+		}, {
+			sourceDescriptionPrefill,
+		}).open();
 	}
 
 	private buildSourceMarkup(source: SourceModalResult): string {

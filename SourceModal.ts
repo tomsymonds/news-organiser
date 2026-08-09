@@ -9,6 +9,11 @@ export interface SourceModalResult {
     reliability: SourceReliability;
 }
 
+interface SourceModalSettings {
+    sourceDescriptionPrefill?: string;
+    [key: string]: unknown;
+}
+
 export class SourceModal extends NewsModal {
     private sourceLink = '';
     private sourceDescription = '';
@@ -18,9 +23,10 @@ export class SourceModal extends NewsModal {
     private sourceDescriptionInput: TextComponent | null = null;
     private linkSuggestionsEl: HTMLElement | null = null;
 
-    constructor(app: App, sourceLinkPrefill: string, onSubmit: (result: SourceModalResult) => void, settings: any = {}) {
+    constructor(app: App, sourceLinkPrefill: string, onSubmit: (result: SourceModalResult) => void, settings: SourceModalSettings = {}) {
         super(app, settings);
         this.sourceLink = this.sanitizeSourceLinkPrefill(sourceLinkPrefill || '');
+        this.sourceDescription = this.sanitizeSourceDescriptionPrefill(settings.sourceDescriptionPrefill || '');
         this.onSubmit = onSubmit;
     }
 
@@ -34,6 +40,10 @@ export class SourceModal extends NewsModal {
             .replace(/^👁️‍🗨️\s*/, '')
             .replace(/^source:\s*/i, '')
             .trim();
+    }
+
+    private sanitizeSourceDescriptionPrefill(value: string): string {
+        return value.trim();
     }
 
     onOpen() {
