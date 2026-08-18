@@ -57,7 +57,7 @@ export default class NewsOrganiser extends Plugin {
 			callback: async () => {
 				try {
 					const text = await navigator.clipboard.readText();
-					new NoteModal(this.app, text || "", this.settings).open()
+					new NoteModal(this.app, "", this.settings, text || "").open()
 				} catch (error) {
 					new Notice('Could not read clipboard. Copy text and try again.');
 				}

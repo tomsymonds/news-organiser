@@ -60,8 +60,9 @@ export class FileManager {
             postSaveHandler.do({status: "error", message: `Attempted to create but file exists`})
         }
         const newFile = noteObj
+        const initialContents = newFile.contents || ""
         //Create and update the tFile metadata
-        this.vault.create(savePath, "").then((tFile) => {
+        this.vault.create(savePath, initialContents).then((tFile) => {
             newFile.tFile = tFile
             const parentMetadataKeys = newFile.constructor.parentMetadataKeys
             if(parentMetadataKeys && Object.keys(parentMetadataKeys).length > 0){

@@ -24,21 +24,29 @@ export class NoteModal extends NewsModal {
 	private storySelector: StorySelector
     private currentStory: TFile | undefined
 	private selectedText: string | ""
+	private pasteContent: string
 
-	constructor(app: App, selectedText: string | null, settings: any = {}) {
+	constructor(app: App, selectedText: string | null, settings: any = {}, pasteContent: string = "") {
 		super(app, settings);
 		//this.components = components;
 		this.note = new Note(null, {}, {})
 		this.type = "Note"
         this.currentStory = this.fileManager.getCurrentActiveFileOfType("Story")
 		this.selectedText = selectedText || ""
+		this.pasteContent = pasteContent || ""
+		if (this.pasteContent) {
+			this.note.contents = this.pasteContent;
+		} else {
+			this.note.metadata.title = this.selectedText || ""
+			this.note.setTitle()
+		}
     }
 
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h2", { text: `New Note` });
-		this.note.metadata.title = this.selectedText || ""
+		this.note.metadata.title = this.pasteContent ? (this.note.metadata.title || "") : (this.selectedText || "")
 		this.note.setTitle()
 
 		/* ---------------- Title ---------------- */
@@ -97,6 +105,7 @@ export class NoteModal extends NewsModal {
 					.setButtonText("Create Note")
 					.setCta()
 					.onClick(() => {
+						this.note.contents = this.pasteContent || this.note.contents;
 						this.createNote()
 						this.close();
 					})
